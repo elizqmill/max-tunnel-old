@@ -97,7 +97,10 @@ jobs:
           find app/src/main/jniLibs -name libclient.so -not -path "*/arm64-v8a/*" -not -path "*/armeabi-v7a/*" -not -path "*/x86_64/*" -execdir mv {} ../../{}/libclient.so \; 2>/dev/null || true
 
       - name: Assemble Release APK
-        run: ./gradlew :app:assembleRelease
+        run: |
+          chmod +x ./gradlew
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          ./gradlew :app:assembleRelease
 
       - name: Upload APK artifacts
         uses: actions/upload-artifact@v4
