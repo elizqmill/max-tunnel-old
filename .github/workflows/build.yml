@@ -102,6 +102,11 @@ jobs:
         run: |
           chmod +x ./gradlew
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
+          echo "KEYSTORE_FILE=../release.keystore" >> local.properties
+          echo "KEYSTORE_PASSWORD=maxtunnel" >> local.properties
+          echo "KEY_ALIAS=maxtunnel" >> local.properties
+          echo "KEY_PASSWORD=maxtunnel" >> local.properties
+          cat local.properties
           ./gradlew :app:assembleRelease
 
       - name: Upload APK artifacts
