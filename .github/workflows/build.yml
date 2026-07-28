@@ -98,6 +98,9 @@ jobs:
           cp /tmp/libs/libclient-armeabi-v7a/libclient.so app/src/main/jniLibs/armeabi-v7a/
           cp /tmp/libs/libclient-x86_64/libclient.so app/src/main/jniLibs/x86_64/
 
+      - name: Decode keystore
+        run: echo "${{ secrets.KEYSTORE_B64 }}" | base64 -d > release.keystore
+
       - name: Assemble Release APK
         run: |
           chmod +x ./gradlew
