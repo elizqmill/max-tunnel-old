@@ -8,9 +8,8 @@ import (
 	"fmt"
 	"io"
 	"log"
-	neturl "net/url"
+	neturl 	"net/url"
 	"os"
-	"strings"
 
 	fhttp "github.com/bogdanfinn/fhttp"
 	tlsclient "github.com/bogdanfinn/tls-client"
