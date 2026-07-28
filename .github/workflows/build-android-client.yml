@@ -12,7 +12,19 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        arch: [arm64, arm, x86_64, x86]
+        include:
+          - arch: arm64
+            goarch: arm64
+            cc: aarch64-linux-android21-clang
+          - arch: arm
+            goarch: arm
+            cc: armv7a-linux-androideabi21-clang
+          - arch: x86_64
+            goarch: amd64
+            cc: x86_64-linux-android21-clang
+          - arch: x86
+            goarch: 386
+            cc: i686-linux-android21-clang
     steps:
       - uses: actions/checkout@v4
 
@@ -22,28 +34,29 @@ jobs:
 
       - name: Install NDK
         run: |
-          sudo apt-get update
-          sudo apt-get install -y android-ndk
-          echo "ANDROID_NDK_HOME=/usr/lib/android-ndk" >> $GITHUB_ENV
+          SDK_URL=https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
+          curl -fsSL -o /tmp/ndk.zip $SDK_URL
+          unzip -q /tmp/ndk.zip -d /tmp
+          mv /tmp/android-ndk-r27c /tmp/ndk
+          echo "ANDROID_NDK_HOME=/tmp/ndk" >> $GITHUB_ENV
 
       - name: Setup cross-compiler
         run: |
-          NDK=$ANDROID_NDK_HOME
-          TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
-          echo "CC_arm64=$TOOLCHAIN/bin/aarch64-linux-android21-clang" >> $GITHUB_ENV
-          echo "CC_arm=$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang" >> $GITHUB_ENV
-          echo "CC_x86_64=$TOOLCHAIN/bin/x86_64-linux-android21-clang" >> $GITHUB_ENV
-          echo "CC_x86=$TOOLCHAIN/bin/i686-linux-android21-clang" >> $GITHUB_ENV
+          echo "CC_arm64=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang" >> $GITHUB_ENV
+          echo "CC_arm=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang" >> $GITHUB_ENV
+          echo "CC_x86_64=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang" >> $GITHUB_ENV
+          echo "CC_x86=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang" >> $GITHUB_ENV
 
       - name: Build libclient.so (${{ matrix.arch }})
         run: |
           cd app/src/main/assets/android-client
           CGO_ENABLED=1 \
           GOOS=android \
-          GOARCH=${{ matrix.arch }} \
+          GOARCH=${{ matrix.goarch }} \
           CC="${{ env[format('CC_{0}', matrix.arch)] }}" \
           go build -buildmode=c-shared -ldflags="-s -w" \
             -o libclient-${{ matrix.arch }}.so .
+        working-directory: ${{ github.workspace }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -55,7 +68,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
       - name: Merge into jniLibs
         run: |
