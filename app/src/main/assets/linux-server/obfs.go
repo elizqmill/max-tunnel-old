@@ -265,6 +265,7 @@ type wrapPacketConn struct {
 	aead      cipher.AEAD
 	selected  int32
 	authLog   int32
+	noWrap    int32 // datachannel mode: pass-through without RTP wrap
 	obfsCfg   *ObfsConfig
 	obfsWrite *ObfsState
 
@@ -315,6 +316,16 @@ func (c *wrapPacketConn) ReadFrom(p []byte) (int, net.Addr, error) {
 		return m, addr, nil
 	}
 
+	if !obfsIsRTPPacket(raw) {
+		atomic.StoreInt32(&c.noWrap, 1)
+		atomic.StoreInt32(&c.selected, 1)
+		if atomic.CompareAndSwapInt32(&c.authLog, 0, 1) {
+			log.Printf("[WRAP] OK: datachannel (raw) mode для %s (keys=%d)", addr.String(), c.keys.Count())
+		}
+		n := copy(p, raw)
+		return n, addr, nil
+	}
+
 	key, m, uErr := c.keys.Unwrap(raw, p)
 	if uErr != nil {
 		if atomic.CompareAndSwapInt32(&c.authLog, 0, 1) {
@@ -342,8 +353,14 @@ func (c *wrapPacketConn) ReadFrom(p []byte) (int, net.Addr, error) {
 }
 
 func (c *wrapPacketConn) WriteTo(p []byte, addr net.Addr) (int, error) {
-	if atomic.LoadInt32(&c.selected) == 0 || c.aead == nil {
+	if atomic.LoadInt32(&c.selected) == 0 {
 		return 0, errors.New("wrap: key not selected")
+	}
+	if atomic.LoadInt32(&c.noWrap) == 1 {
+		return c.inner.WriteTo(p, addr)
+	}
+	if c.aead == nil {
+		return 0, errors.New("wrap: cipher not initialized")
 	}
 	c.txMu.Lock()
 	defer c.txMu.Unlock()

@@ -571,6 +571,26 @@ main() {
     case "$action" in
         status|--status|-s)       do_status ;;
         uninstall|--uninstall|-u) do_uninstall ;;
+        update|--update)
+            prog 0.1 "Остановка сервиса..."
+            systemctl stop wdtt 2>/dev/null || true
+            prog 0.3 "Замена бинарника..."
+            if [ -f /tmp/wdtt-server ]; then
+                chmod +x /tmp/wdtt-server
+                install -m 0755 /tmp/wdtt-server /usr/local/bin/wdtt-server
+                prog 0.6 "Бинарник обновлён"
+            else
+                prog 0.6 "Бинарник не найден в /tmp/"
+                echo "⚠ wdtt-server не найден в /tmp/"
+            fi
+            prog 0.8 "Запуск сервиса..."
+            systemctl daemon-reload
+            systemctl restart wdtt
+            sleep 2
+            prog 1.0 "Готово!"
+            echo "✅ Сервер обновлён, конфиг сохранён"
+            systemctl status wdtt --no-pager || true
+            ;;
         install|--install|-i|*)
             wdtt_cleanup
             setup_sysctl

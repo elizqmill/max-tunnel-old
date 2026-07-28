@@ -36,6 +36,9 @@ type ObfsConfig struct {
 }
 
 func NewObfsConfig(mode string) *ObfsConfig {
+	if mode == "datachannel" {
+		return nil
+	}
 	var buf [4]byte
 	rand.Read(buf[:])
 

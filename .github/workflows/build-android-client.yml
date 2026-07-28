@@ -1,0 +1,71 @@
+name: Build Android Go Client
+
+on:
+  push:
+    paths:
+      - 'app/src/main/assets/android-client/**'
+      - '.github/workflows/build-android-client.yml'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        arch: [arm64, arm, x86_64, x86]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Install NDK
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y android-ndk
+          echo "ANDROID_NDK_HOME=/usr/lib/android-ndk" >> $GITHUB_ENV
+
+      - name: Setup cross-compiler
+        run: |
+          NDK=$ANDROID_NDK_HOME
+          TOOLCHAIN=$NDK/toolchains/llvm/prebuilt/linux-x86_64
+          echo "CC_arm64=$TOOLCHAIN/bin/aarch64-linux-android21-clang" >> $GITHUB_ENV
+          echo "CC_arm=$TOOLCHAIN/bin/armv7a-linux-androideabi21-clang" >> $GITHUB_ENV
+          echo "CC_x86_64=$TOOLCHAIN/bin/x86_64-linux-android21-clang" >> $GITHUB_ENV
+          echo "CC_x86=$TOOLCHAIN/bin/i686-linux-android21-clang" >> $GITHUB_ENV
+
+      - name: Build libclient.so (${{ matrix.arch }})
+        run: |
+          cd app/src/main/assets/android-client
+          CGO_ENABLED=1 \
+          GOOS=android \
+          GOARCH=${{ matrix.arch }} \
+          CC="${{ env[format('CC_{0}', matrix.arch)] }}" \
+          go build -buildmode=c-shared -ldflags="-s -w" \
+            -o libclient-${{ matrix.arch }}.so .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: libclient-${{ matrix.arch }}
+          path: app/src/main/assets/android-client/libclient-${{ matrix.arch }}.so
+
+  merge:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+      - name: Merge into jniLibs
+        run: |
+          mkdir -p app/src/main/jniLibs
+          for arch in arm64 arm x86_64 x86; do
+            mkdir -p app/src/main/jniLibs/$arch
+            cp libclient-$arch/libclient-$arch.so app/src/main/jniLibs/$arch/libclient.so
+          done
+      - name: Upload merged jniLibs
+        uses: actions/upload-artifact@v4
+        with:
+          name: jniLibs
+          path: app/src/main/jniLibs

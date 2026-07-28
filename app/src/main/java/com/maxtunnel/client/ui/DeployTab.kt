@@ -77,6 +77,8 @@ fun DeployTab() {
     val savedManualPorts by settingsStore.manualPortsEnabled.collectAsStateWithLifecycle(initialValue = false)
     val savedServerDtlsPort by settingsStore.serverDtlsPort.collectAsStateWithLifecycle(initialValue = 56000)
     val savedServerWgPort by settingsStore.serverWgPort.collectAsStateWithLifecycle(initialValue = 56001)
+    val savedServerVersion by settingsStore.deployServerVersion.collectAsStateWithLifecycle(initialValue = "")
+    val availableVersion by DeployManager.availableVersion.collectAsStateWithLifecycle()
 
     var showSecretsDialog by remember { mutableStateOf(false) }
     var showUninstallDialog by remember { mutableStateOf(false) }
@@ -95,6 +97,7 @@ fun DeployTab() {
     }
 
     val isDeploying by DeployManager.isDeploying.collectAsStateWithLifecycle()
+    val isUpdating by DeployManager.isUpdating.collectAsStateWithLifecycle()
     val deployProgress by DeployManager.deployProgress.collectAsStateWithLifecycle()
     val currentStep by DeployManager.currentStep.collectAsStateWithLifecycle()
 
@@ -103,6 +106,12 @@ fun DeployTab() {
     LaunchedEffect(savedPassword) { password = savedPassword }
     LaunchedEffect(savedDns1) { dns1 = savedDns1 }
     LaunchedEffect(savedDns2) { dns2 = savedDns2 }
+    LaunchedEffect(savedIp, savedServerVersion) {
+        if (savedIp.isNotBlank()) {
+            DeployManager.currentVersion.value = savedServerVersion
+            DeployManager.checkUpdate()
+        }
+    }
     val animatedProgress by animateFloatAsState(
         targetValue = deployProgress,
         animationSpec = tween(durationMillis = 1200, easing = androidx.compose.animation.core.FastOutSlowInEasing),
@@ -364,6 +373,70 @@ fun DeployTab() {
             }
         }
 
+        if (availableVersion.isNotEmpty() && !isDeploying) {
+            OutlinedButton(
+                onClick = {
+                    if (ip.isBlank() || password.isBlank()) return@OutlinedButton
+                    val effectiveLogin = if (login.isBlank()) "root" else login
+                    DeployManager.scope.launch {
+                        try {
+                            DeployManager.startUpdate()
+                            val file = DeployManager.downloadUpdate(context) { p, s -> DeployManager.updateProgress(p, s) }
+                            if (file != null) {
+                                DeployManager.updateProgress(0.5f, "Загрузка на сервер...")
+                                var session: com.jcraft.jsch.Session? = null
+                                try {
+                                    session = createSSHSession(ip, effectiveLogin, password, savedSshPort.toIntOrNull() ?: 22)
+                                    DeployManager.activeSession = session
+                                    val ssh = SSHClient(session, password)
+                                    ssh.upload(file, "/tmp/wdtt-server")
+                                    file.delete()
+                                    DeployManager.updateProgress(0.6f, "Обновление...")
+                                    ssh.exec(
+                                        rootCommand("env WDTT_DTLS_PORT=$savedServerDtlsPort WDTT_WG_PORT=$savedServerWgPort WDTT_SSH_PORT=$savedSshPort bash /tmp/deploy.sh update"),
+                                        timeout = 60000L
+                                    )
+                                    settingsStore.saveDeployServerVersion(availableVersion)
+                                    DeployManager.availableVersion.value = ""
+                                    DeployManager.stopUpdate("success")
+                                } catch (e: Exception) {
+                                    DeployManager.writeError("Update SSH: ${e.message}")
+                                    DeployManager.stopUpdate("Ошибка: ${e.message?.take(100)}")
+                                } finally {
+                                    try { session?.disconnect() } catch (_: Exception) {}
+                                    DeployManager.activeSession = null
+                                }
+                            } else {
+                                DeployManager.stopUpdate("Ошибка скачивания")
+                            }
+                        } catch (e: Exception) {
+                            DeployManager.writeError("Update: ${e.message}")
+                            DeployManager.stopUpdate("Ошибка: ${e.message?.take(100)}")
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth().height(48.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    containerColor = MaterialTheme.colorScheme.tertiaryContainer,
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
+                ),
+                enabled = !isDeploying && !isUpdating
+            ) {
+                if (isUpdating) {
+                    CircularProgressIndicator(modifier = Modifier.size(18.dp), strokeWidth = 2.dp)
+                } else {
+                    Icon(Icons.Default.CloudUpload, null, Modifier.size(18.dp))
+                }
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    if (isUpdating) "Обновление..."
+                    else "Обновить сервер до $availableVersion (текущая: ${savedServerVersion.ifEmpty { "—" }})",
+                    fontWeight = FontWeight.SemiBold
+                )
+            }
+        }
+
         if (showUninstallDialog) {
             UninstallConfirmDialog(
                 onDismiss = { showUninstallDialog = false },
@@ -621,6 +694,8 @@ private suspend fun performDeploy(
         if (output.contains("✅") || output.contains("Деплой успешно") || output.contains("active")) {
             DeployManager.stopDeploy("success")
             TunnelManager.addDeploySuccessLog("Деплой успешно завершен. Сервис активен.")
+            val store = com.maxtunnel.client.SettingsStore(context)
+            kotlinx.coroutines.GlobalScope.launch { store.saveDeployServerVersion("installed") }
             return@withContext true
         } else if (output.contains("error:")) {
             DeployManager.writeError("Deploy script output contains error")

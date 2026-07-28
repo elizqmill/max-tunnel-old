@@ -64,6 +64,7 @@ class SettingsStore(context: Context) {
         private val DEPLOY_ADMIN_ID_ENCRYPTED = stringPreferencesKey("deploy_admin_id_encrypted")
         private val DEPLOY_BOT_TOKEN = stringPreferencesKey("deploy_bot_token")
         private val DEPLOY_BOT_TOKEN_ENCRYPTED = stringPreferencesKey("deploy_bot_token_encrypted")
+        private val DEPLOY_SERVER_VERSION = stringPreferencesKey("deploy_server_version")
 
         
         private val PROXY_MODE = stringPreferencesKey("proxy_mode") 
@@ -238,6 +239,11 @@ class SettingsStore(context: Context) {
     val deployBotToken: Flow<String> = dataStore.data.map { prefs ->
         val profile = prefs[ACTIVE_PROFILE] ?: 0
         readSecret(prefs, DEPLOY_BOT_TOKEN_ENCRYPTED, DEPLOY_BOT_TOKEN, profile)
+    }
+
+    val deployServerVersion: Flow<String> = dataStore.data.map { prefs ->
+        val profile = prefs[ACTIVE_PROFILE] ?: 0
+        prefs[getProfileKey(DEPLOY_SERVER_VERSION, profile)] ?: ""
     }
 
     
@@ -509,6 +515,13 @@ class SettingsStore(context: Context) {
             prefs.putSecret(DEPLOY_ADMIN_ID_ENCRYPTED, DEPLOY_ADMIN_ID, adminId, profile)
             prefs.putSecret(DEPLOY_BOT_TOKEN_ENCRYPTED, DEPLOY_BOT_TOKEN, botToken, profile)
             prefs[getProfileKey(DEPLOY_SSH_PORT, profile)] = sshPort
+        }
+    }
+
+    suspend fun saveDeployServerVersion(version: String) {
+        dataStore.edit { prefs ->
+            val profile = prefs[ACTIVE_PROFILE] ?: 0
+            prefs[getProfileKey(DEPLOY_SERVER_VERSION, profile)] = version
         }
     }
 

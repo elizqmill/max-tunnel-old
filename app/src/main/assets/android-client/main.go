@@ -161,7 +161,7 @@ func main() {
 	captchaMode := flag.String("captcha-mode", "auto", "режим обхода капчи (auto/wv/rjs)")
 	fingerprint := flag.String("fingerprint", "chrome", "браузерный фингерпринт (chrome, safari, ios, android, firefox)")
 	clientIdsFlag := flag.String("client-ids", "", "ID клиентов VK через запятую")
-	obfsMode := flag.String("obfs", "audio", "режим обфускации (audio/video)")
+	obfsMode := flag.String("obfs", "audio", "режим обфускации (audio/video/datachannel)")
 
 	flag.Parse()
 	activeVKAuthMode := setVKAuthMode(*vkAuthMode)

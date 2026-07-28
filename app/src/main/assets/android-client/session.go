@@ -150,7 +150,7 @@ func RunSession(
 	var relayWg sync.WaitGroup
 	relayWg.Add(2)
 
-	useWrap := len(tp.WrapKey) == wrapKeyLen
+	useWrap := len(tp.WrapKey) == wrapKeyLen && tp.ObfsMode != "datachannel"
 
 	var obfsCfg *ObfsConfig
 	var obfsWriteState *ObfsState
