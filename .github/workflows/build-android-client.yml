@@ -7,6 +7,9 @@ on:
       - '.github/workflows/build-android-client.yml'
   workflow_dispatch:
 
+env:
+  NDK_HOME: /tmp/android-ndk
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -34,29 +37,18 @@ jobs:
 
       - name: Install NDK
         run: |
-          SDK_URL=https://dl.google.com/android/repository/android-ndk-r27c-linux.zip
-          curl -fsSL -o /tmp/ndk.zip $SDK_URL
-          unzip -q /tmp/ndk.zip -d /tmp
-          mv /tmp/android-ndk-r27c /tmp/ndk
-          echo "ANDROID_NDK_HOME=/tmp/ndk" >> $GITHUB_ENV
-
-      - name: Setup cross-compiler
-        run: |
-          echo "CC_arm64=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android21-clang" >> $GITHUB_ENV
-          echo "CC_arm=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi21-clang" >> $GITHUB_ENV
-          echo "CC_x86_64=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android21-clang" >> $GITHUB_ENV
-          echo "CC_x86=/tmp/ndk/toolchains/llvm/prebuilt/linux-x86_64/bin/i686-linux-android21-clang" >> $GITHUB_ENV
+          NDK_ZIP=android-ndk-r27c-linux.zip
+          curl -fsSL -o /tmp/$NDK_ZIP https://dl.google.com/android/repository/$NDK_ZIP
+          unzip -q /tmp/$NDK_ZIP -d /tmp
+          mv /tmp/android-ndk-r27c ${{ env.NDK_HOME }}
 
       - name: Build libclient.so (${{ matrix.arch }})
         run: |
+          export CC=${{ env.NDK_HOME }}/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.cc }}
           cd app/src/main/assets/android-client
-          CGO_ENABLED=1 \
-          GOOS=android \
-          GOARCH=${{ matrix.goarch }} \
-          CC="${{ env[format('CC_{0}', matrix.arch)] }}" \
-          go build -buildmode=c-shared -ldflags="-s -w" \
+          CGO_ENABLED=1 GOOS=android GOARCH=${{ matrix.goarch }} \
+            go build -buildmode=c-shared -ldflags="-s -w" \
             -o libclient-${{ matrix.arch }}.so .
-        working-directory: ${{ github.workspace }}
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
