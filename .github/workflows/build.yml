@@ -1,0 +1,107 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        abi: [arm64-v8a, armeabi-v7a, x86_64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install NDK
+        run: |
+          ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT
+          sdkmanager --install "ndk;27.0.12077973" 2>/dev/null || sdkmanager --install "ndk;26.1.10909125"
+          echo "ANDROID_NDK_HOME=$ANDROID_SDK_ROOT/ndk/27.0.12077973" >> $GITHUB_ENV
+          echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT" >> $GITHUB_ENV
+
+      - name: Build Go client (${{ matrix.abi }})
+        env:
+          GOOS: android
+          GOARCH: arm64
+          CGO_ENABLED: 1
+        run: |
+          ABI=${{ matrix.abi }}
+          case $ABI in
+            arm64-v8a)
+              CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/aarch64-linux-android28-clang
+              GOARCH=arm64
+              ;;
+            armeabi-v7a)
+              CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/armv7a-linux-androideabi28-clang
+              GOARCH=arm
+              ;;
+            x86_64)
+              CC=$ANDROID_NDK_HOME/toolchains/llvm/prebuilt/linux-x86_64/bin/x86_64-linux-android28-clang
+              GOARCH=amd64
+              ;;
+          esac
+          export CC GOARCH
+          mkdir -p app/src/main/jniLibs/$ABI
+          cd app/src/main/assets/android-client
+          go build -ldflags="-s -w -checklinkname=0" -trimpath -buildmode=c-shared -o ../../jniLibs/$ABI/libclient.so .
+
+      - name: Build server binary
+        run: |
+          cd app/src/main/assets/linux-server
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ../server .
+          cd ../../../..
+
+      - name: Upload artifact (${{ matrix.abi }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: libclient-${{ matrix.abi }}
+          path: app/src/main/jniLibs/${{ matrix.abi }}/libclient.so
+
+  assemble:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Download all .so artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: libclient-*
+          path: app/src/main/jniLibs
+          merge-multiple: true
+
+      - name: Rename artifact dirs
+        run: |
+          mkdir -p app/src/main/jniLibs/arm64-v8a
+          mkdir -p app/src/main/jniLibs/armeabi-v7a
+          mkdir -p app/src/main/jniLibs/x86_64
+          find app/src/main/jniLibs -name libclient.so -not -path "*/arm64-v8a/*" -not -path "*/armeabi-v7a/*" -not -path "*/x86_64/*" -execdir mv {} ../../{}/libclient.so \; 2>/dev/null || true
+
+      - name: Assemble Release APK
+        run: ./gradlew :app:assembleRelease
+
+      - name: Upload APK artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: max-tunnel-apks
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 30
