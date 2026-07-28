@@ -86,15 +86,17 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           pattern: libclient-*
-          path: app/src/main/jniLibs
-          merge-multiple: true
+          merge-multiple: false
+          path: /tmp/libs
 
-      - name: Rename artifact dirs
+      - name: Organize .so files by ABI
         run: |
           mkdir -p app/src/main/jniLibs/arm64-v8a
           mkdir -p app/src/main/jniLibs/armeabi-v7a
           mkdir -p app/src/main/jniLibs/x86_64
-          find app/src/main/jniLibs -name libclient.so -not -path "*/arm64-v8a/*" -not -path "*/armeabi-v7a/*" -not -path "*/x86_64/*" -execdir mv {} ../../{}/libclient.so \; 2>/dev/null || true
+          cp /tmp/libs/libclient-arm64-v8a/libclient.so app/src/main/jniLibs/arm64-v8a/
+          cp /tmp/libs/libclient-armeabi-v7a/libclient.so app/src/main/jniLibs/armeabi-v7a/
+          cp /tmp/libs/libclient-x86_64/libclient.so app/src/main/jniLibs/x86_64/
 
       - name: Assemble Release APK
         run: |
