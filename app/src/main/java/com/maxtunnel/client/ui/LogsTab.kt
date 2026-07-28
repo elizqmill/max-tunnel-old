@@ -61,7 +61,7 @@ fun LogsTab() {
                 IconButton(onClick = {
                     val text = currentLogs.joinToString("\n") { "${it.message} (x${it.count})" }
                     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-                    val clip = ClipData.newPlainText("WDTT Logs", text)
+                    val clip = ClipData.newPlainText("Max Tunnel Logs", text)
                     clipboard.setPrimaryClip(clip)
                     Toast.makeText(context, "Скопировано", Toast.LENGTH_SHORT).show()
                 }) {

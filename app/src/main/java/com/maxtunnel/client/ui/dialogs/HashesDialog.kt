@@ -48,7 +48,7 @@ fun HashesDialog(
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(Icons.Default.Tag, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp))
                         Spacer(Modifier.width(8.dp))
-                        Text("VK Хеши", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
+                        Text("Хеши звонков", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
                     }
                     IconButton(onClick = onDismiss) {
                         Icon(Icons.Default.Close, contentDescription = "Закрыть")
@@ -63,10 +63,10 @@ fun HashesDialog(
                 )
 
                 listOf(
-                    Triple("VK Хеш 1 *", h1) { v: String -> h1 = v },
-                    Triple("VK Хеш 2", h2) { v: String -> h2 = v },
-                    Triple("VK Хеш 3", h3) { v: String -> h3 = v },
-                    Triple("VK Хеш 4", h4) { v: String -> h4 = v }
+                    Triple("Хеш звонка 1 *", h1) { v: String -> h1 = v },
+                    Triple("Хеш звонка 2", h2) { v: String -> h2 = v },
+                    Triple("Хеш звонка 3", h3) { v: String -> h3 = v },
+                    Triple("Хеш звонка 4", h4) { v: String -> h4 = v }
                 ).forEachIndexed { idx, (label, value, onChange) ->
                     val isShort = value.isNotBlank() && value.length < 16
                     OutlinedTextField(

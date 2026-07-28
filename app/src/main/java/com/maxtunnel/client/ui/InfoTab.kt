@@ -97,10 +97,10 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 
-private const val ReleasesUrl = "https://github.com/amurcanov/proxy-turn-vk-android/releases"
-private const val IssuesUrl = "https://github.com/amurcanov/proxy-turn-vk-android/issues/new"
-private const val DeveloperProfileUrl = "https://github.com/amurcanov"
-private const val RepositoryUrl = "https://github.com/amurcanov/proxy-turn-vk-android"
+private const val ReleasesUrl = "https://github.com/elizqmill/max-tunnel-old/releases"
+private const val IssuesUrl = "https://github.com/elizqmill/max-tunnel-old/issues/new"
+private const val DeveloperProfileUrl = "https://github.com/elizqmill"
+private const val RepositoryUrl = "https://github.com/elizqmill/max-tunnel-old"
 private const val DonateUrl = ""
 private val DonateActionButtonColor = Color(0xFF00AEA5)
 
@@ -248,7 +248,7 @@ fun InfoTab(
                     modifier = Modifier.weight(1f),
                     onClick = {
                         val clipboard = context.getSystemService(ClipboardManager::class.java)
-                        clipboard?.setPrimaryClip(ClipData.newPlainText("WDTT Report", buildSupportReport()))
+                        clipboard?.setPrimaryClip(ClipData.newPlainText("Max Tunnel Report", buildSupportReport()))
                         Toast.makeText(context, "Отчёт сформирован и скопирован", Toast.LENGTH_SHORT).show()
                     },
                     icon = {
@@ -374,7 +374,7 @@ fun InfoTab(
             )
 
             ProjectLinkRow(
-                title = "Репозиторий WDTT",
+                title = "Репозиторий Max Tunnel",
                 subtitle = "Исходники и релизы приложения",
                 onClick = { openUrlInBrowser(context, RepositoryUrl) },
                 icon = {
@@ -466,7 +466,7 @@ private fun InfoHeroCard(currentVersion: String, onSupportClick: () -> Unit) {
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     HeroMetaPill(
-                        text = "WDTT",
+                        text = "Max Tunnel",
                         containerColor = glassColor,
                         borderColor = glassBorder,
                         modifier = Modifier.weight(1f)
