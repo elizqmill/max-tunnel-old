@@ -363,7 +363,24 @@ func fetchVkCreds(ctx context.Context, link string, streamID int) (string, strin
 		return "", "", nil, fmt.Errorf("CAPTCHA_WAIT_REQUIRED: global lockout active")
 	}
 
-	if getVKAuthMode() == "vkcalls" {
+	authMode := getVKAuthMode()
+
+	if authMode == "maxcalls" {
+		if user, pass, addrs, err := getMaxCredsViaMaxCallsPath(ctx, link, streamID); err == nil {
+			log.Printf("[STREAM %d] [Max Auth] Success via Max Calls path", streamID)
+			return user, pass, addrs, nil
+		} else {
+			log.Printf("[STREAM %d] [Max Auth] Max Calls path failed (%s), trying WS2 path", streamID, describeMaxCallsFailure(err))
+		}
+		if user, pass, addrs, err := getMaxCredsViaWS2Path(ctx, link, streamID); err == nil {
+			log.Printf("[STREAM %d] [Max Auth] Success via WS2 path", streamID)
+			return user, pass, addrs, nil
+		} else {
+			log.Printf("[STREAM %d] [Max Auth] WS2 path failed (%s), falling back to VK Calls", streamID, describeMaxCallsFailure(err))
+		}
+	}
+
+	if authMode == "vkcalls" || authMode == "maxcalls" {
 		if user, pass, addrs, err := getVKCredsViaVKCallsPath(ctx, link, streamID); err == nil {
 			log.Printf("[STREAM %d] [VK Auth] Success via VK Calls path", streamID)
 			return user, pass, addrs, nil

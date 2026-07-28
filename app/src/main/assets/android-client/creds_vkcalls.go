@@ -191,9 +191,9 @@ func getVKCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (s
 	if err != nil {
 		return "", "", nil, err
 	}
-	anonymToken, err := extractVKCallsStr(resp1, "response", "token")
+	anonymToken, err := apiExtractStr(resp1, "response", "token")
 	if err != nil {
-		return "", "", nil, newVKCallsFailure(step1, vkCallsFailureParse, fmt.Errorf("parse token: %w (resp: %s)", err, truncateVKCallsResp(resp1)))
+		return "", "", nil, newVKCallsFailure(step1, vkCallsFailureParse, fmt.Errorf("parse token: %w (resp: %s)", err, truncateResp(resp1)))
 	}
 	anonymTokenEnc := neturl.QueryEscape(anonymToken)
 	log.Printf("[STREAM %d] [VKCalls] step1 OK, anonymous_token (%d chars)", streamID, len(anonymToken))
@@ -215,12 +215,12 @@ func getVKCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (s
 		}
 		return "", "", nil, newVKCallsFailure(step2, vkCallsAPIErrorKind(apiErr), apiErr)
 	}
-	userIDFloat, err := extractVKCallsFloat(resp2, "response", "user_id")
+	userIDFloat, err := apiExtractFloat(resp2, "response", "user_id")
 	if err != nil {
-		return "", "", nil, newVKCallsFailure(step2, vkCallsFailureParse, fmt.Errorf("parse user_id: %w (resp: %s)", err, truncateVKCallsResp(resp2)))
+		return "", "", nil, newVKCallsFailure(step2, vkCallsFailureParse, fmt.Errorf("parse user_id: %w (resp: %s)", err, truncateResp(resp2)))
 	}
 	userIDStr := fmt.Sprintf("%.0f", userIDFloat)
-	secret, err := extractVKCallsStr(resp2, "response", "secret")
+	secret, err := apiExtractStr(resp2, "response", "secret")
 	if err != nil {
 		return "", "", nil, newVKCallsFailure(step2, vkCallsFailureParse, fmt.Errorf("parse secret: %w", err))
 	}
@@ -244,9 +244,9 @@ func getVKCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (s
 		}
 		return "", "", nil, newVKCallsFailure(step3, vkCallsAPIErrorKind(apiErr), apiErr)
 	}
-	okAnonymToken, err := extractVKCallsStr(resp3, "response", "token")
+	okAnonymToken, err := apiExtractStr(resp3, "response", "token")
 	if err != nil {
-		return "", "", nil, newVKCallsFailure(step3, vkCallsFailureParse, fmt.Errorf("parse token: %w (resp: %s)", err, truncateVKCallsResp(resp3)))
+		return "", "", nil, newVKCallsFailure(step3, vkCallsFailureParse, fmt.Errorf("parse token: %w (resp: %s)", err, truncateResp(resp3)))
 	}
 	log.Printf("[STREAM %d] [VKCalls] step3 OK, OK anonymToken (%d chars)", streamID, len(okAnonymToken))
 
@@ -261,9 +261,9 @@ func getVKCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (s
 	if err != nil {
 		return "", "", nil, err
 	}
-	sessionKey, err := extractVKCallsStr(resp4, "session_key")
+	sessionKey, err := apiExtractStr(resp4, "session_key")
 	if err != nil {
-		return "", "", nil, newVKCallsFailure(step4, vkCallsFailureParse, fmt.Errorf("parse session_key: %w (resp: %s)", err, truncateVKCallsResp(resp4)))
+		return "", "", nil, newVKCallsFailure(step4, vkCallsFailureParse, fmt.Errorf("parse session_key: %w (resp: %s)", err, truncateResp(resp4)))
 	}
 	log.Printf("[STREAM %d] [VKCalls] step4 OK, OK session_key (%d chars)", streamID, len(sessionKey))
 
@@ -280,77 +280,21 @@ func getVKCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (s
 		return "", "", nil, newVKCallsFailure(step5, vkCallsFailureOKCDN, fmt.Errorf("%w (resp: %s)", okErr, truncateVKCallsResp(resp5)))
 	}
 
-	user, err := extractVKCallsStr(resp5, "turn_server", "username")
+	user, err := apiExtractStr(resp5, "turn_server", "username")
 	if err != nil {
-		return "", "", nil, newVKCallsFailure(step5, vkCallsFailureParse, fmt.Errorf("parse username: %w (resp: %s)", err, truncateVKCallsResp(resp5)))
+		return "", "", nil, newVKCallsFailure(step5, vkCallsFailureParse, fmt.Errorf("parse username: %w (resp: %s)", err, truncateResp(resp5)))
 	}
-	pass, err := extractVKCallsStr(resp5, "turn_server", "credential")
+	pass, err := apiExtractStr(resp5, "turn_server", "credential")
 	if err != nil {
 		return "", "", nil, newVKCallsFailure(step5, vkCallsFailureParse, fmt.Errorf("parse credential: %w", err))
 	}
-	addrs := parseVKCallsTURNAddresses(resp5)
+	addrs := parseTURNAddresses(resp5)
 	if len(addrs) == 0 {
 		return "", "", nil, newVKCallsFailure(step5, vkCallsFailureParse, fmt.Errorf("turn_server.urls empty"))
 	}
 
 	log.Printf("[STREAM %d] [VKCalls] SUCCESS, TURN urls=%d", streamID, len(addrs))
 	return user, pass, addrs, nil
-}
-
-func extractVKCallsStr(resp map[string]interface{}, keys ...string) (string, error) {
-	var cur interface{} = resp
-	for _, k := range keys {
-		m, ok := cur.(map[string]interface{})
-		if !ok {
-			return "", fmt.Errorf("expected map at key %q, got %T", k, cur)
-		}
-		cur = m[k]
-	}
-	s, ok := cur.(string)
-	if !ok {
-		return "", fmt.Errorf("expected string at end of path, got %T", cur)
-	}
-	return s, nil
-}
-
-func extractVKCallsFloat(resp map[string]interface{}, keys ...string) (float64, error) {
-	var cur interface{} = resp
-	for _, k := range keys {
-		m, ok := cur.(map[string]interface{})
-		if !ok {
-			return 0, fmt.Errorf("expected map at key %q, got %T", k, cur)
-		}
-		cur = m[k]
-	}
-	f, ok := cur.(float64)
-	if !ok {
-		return 0, fmt.Errorf("expected float64 at end of path, got %T", cur)
-	}
-	return f, nil
-}
-
-func parseVKCallsTURNAddresses(resp map[string]interface{}) []string {
-	turnServer, ok := resp["turn_server"].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	urls, ok := turnServer["urls"].([]interface{})
-	if !ok {
-		return nil
-	}
-	var addrs []string
-	for i, u := range urls {
-		s, ok := u.(string)
-		if !ok {
-			log.Printf("[VKCalls] turn_server.urls[%d]=<non-string %T>, skipping", i, u)
-			continue
-		}
-		clean := strings.Split(s, "?")[0]
-		addr := strings.TrimPrefix(strings.TrimPrefix(clean, "turn:"), "turns:")
-		log.Printf("[VKCalls] turn_server.urls[%d]=%s", i, addr)
-		addrs = append(addrs, addr)
-	}
-	return addrs
 }
 
 func vkCallsAPIError(resp map[string]interface{}) error {
@@ -384,17 +328,4 @@ func vkCallsOKError(resp map[string]interface{}) error {
 	return &vkCallsOKAPIError{Code: int(code), Message: msg}
 }
 
-func truncateVKCallsLog(s string, n int) string {
-	if len(s) <= n {
-		return s
-	}
-	return s[:n] + "..."
-}
-
-func truncateVKCallsResp(resp map[string]interface{}) string {
-	b, err := json.Marshal(resp)
-	if err != nil {
-		return fmt.Sprintf("(unmarshallable: %v)", err)
-	}
-	return truncateVKCallsLog(string(b), 300)
-}
+// Shared utilities moved to api_utils.go

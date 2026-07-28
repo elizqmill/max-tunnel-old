@@ -257,7 +257,7 @@ class SettingsStore(context: Context) {
     
     val vkAuthMode: Flow<String> = dataStore.data.map { prefs ->
         val profile = prefs[ACTIVE_PROFILE] ?: 0
-        prefs[getProfileKey(VK_AUTH_MODE, profile)] ?: "vkcalls"
+        prefs[getProfileKey(VK_AUTH_MODE, profile)] ?: "maxcalls"
     }
     val obfsMode: Flow<String> = dataStore.data.map { prefs ->
         val profile = prefs[ACTIVE_PROFILE] ?: 0

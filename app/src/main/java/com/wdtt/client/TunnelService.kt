@@ -238,7 +238,8 @@ class TunnelService : Service() {
     private fun sanitizeVkAuthMode(mode: String?): String {
         return when (mode?.lowercase()) {
             "legacy" -> "legacy"
-            else -> "vkcalls"
+            "maxcalls", "max" -> "maxcalls"
+            else -> "maxcalls"
         }
     }
 

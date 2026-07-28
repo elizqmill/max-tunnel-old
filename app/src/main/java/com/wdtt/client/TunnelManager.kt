@@ -212,11 +212,16 @@ object TunnelManager {
                 val targetHash = if (activeHashIndex == 0) params.vkHashes else params.secondaryVkHash
                 
                 
-                val hashList = targetHash
-                    .split(Regex("[,\\s\\n]+"))
-                    .map { it.trim() }
-                    .filter { it.isNotEmpty() }
-                    .take(3)
+                val isMax = params.isMaxMode && params.maxCallLink.isNotEmpty()
+                val hashList = if (isMax) {
+                    listOf(params.maxCallLink)
+                } else {
+                    targetHash
+                        .split(Regex("[,\\s\\n]+"))
+                        .map { it.trim() }
+                        .filter { it.isNotEmpty() }
+                        .take(3)
+                }
 
                 if (hashList.isEmpty()) {
                     updateLog("hash_error", "Ошибка: Хеш не указан", 99, true)
@@ -246,10 +251,17 @@ object TunnelManager {
                 val cmd = mutableListOf(
                     binaryPath,
                     "-peer", params.peer,
-                    "-vk", hashList.joinToString(","),
                     "-n", totalWorkers.toString(),
                     "-listen", "127.0.0.1:${params.port}"
                 )
+
+                if (params.isMaxMode && params.maxCallLink.isNotEmpty()) {
+                    cmd.add("-call")
+                    cmd.add(params.maxCallLink)
+                } else {
+                    cmd.add("-vk")
+                    cmd.add(hashList.joinToString(","))
+                }
 
                 if (params.fingerprint.isNotEmpty()) {
                     cmd.add("-fingerprint")
@@ -890,10 +902,12 @@ data class TunnelParams(
     val sni: String = "",
     val connectionPassword: String = "",
     val protocol: String = "udp",
-    val vkAuthMode: String = "vkcalls",
+    val vkAuthMode: String = "maxcalls",
     val captchaMode: String = "auto",
     val captchaSolveMethod: String = "auto",
     val fingerprint: String = "firefox",
     val clientIds: String = "8202606,6287487",
-    val obfsMode: String = "audio"
+    val obfsMode: String = "audio",
+    val isMaxMode: Boolean = false,
+    val maxCallLink: String = ""
 )

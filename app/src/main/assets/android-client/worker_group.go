@@ -242,7 +242,7 @@ func ParseHashes(raw string) []string {
 	for _, h := range strings.FieldsFunc(raw, func(r rune) bool {
 		return r == ',' || r == ';' || r == '\n' || r == '\r' || r == '\t' || r == ' '
 	}) {
-		h = normalizeVKJoinHash(h)
+		h = normalizeJoinHash(h)
 		if h != "" {
 			if _, exists := seen[h]; exists {
 				continue
@@ -254,13 +254,21 @@ func ParseHashes(raw string) []string {
 	return result
 }
 
-func normalizeVKJoinHash(input string) string {
+func normalizeJoinHash(input string) string {
 	s := strings.Trim(strings.TrimSpace(input), "<>\"'")
 	if s == "" {
 		return ""
 	}
 
 	lower := strings.ToLower(s)
+	if idx := strings.Index(lower, "/joincall/"); idx >= 0 {
+		s = s[idx+len("/joincall/"):]
+		if idx2 := strings.IndexAny(s, "?#/"); idx2 != -1 {
+			s = s[:idx2]
+		}
+		return strings.Trim(s, "/")
+	}
+
 	if idx := strings.Index(lower, "/call/join/"); idx >= 0 {
 		s = s[idx+len("/call/join/"):]
 	} else if strings.HasPrefix(lower, "http://") || strings.HasPrefix(lower, "https://") {
@@ -271,6 +279,10 @@ func normalizeVKJoinHash(input string) string {
 		s = s[:idx]
 	}
 	return strings.Trim(strings.TrimSpace(s), "/")
+}
+
+func normalizeVKJoinHash(input string) string {
+	return normalizeJoinHash(input)
 }
 
 type TurnParams struct {

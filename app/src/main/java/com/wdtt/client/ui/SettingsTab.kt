@@ -276,7 +276,7 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
     var pendingStartAfterVpnPermission by remember { mutableStateOf(false) }
 
     fun startTunnelService() {
-        val effectiveVkAuthMode = if (useVKCallsAuth) "vkcalls" else "legacy"
+        val effectiveVkAuthMode = if (useVKCallsAuth) "maxcalls" else "legacy"
         val effectiveCaptchaMode = if (autoCaptchaEnabled) "auto" else if (useWVCaptcha) "wv" else "rjs"
         val effectiveCaptchaSolveMethod = if (!autoCaptchaEnabled && effectiveCaptchaMode == "wv" && isManualMode) "manual" else "auto"
         saveJob?.cancel()

@@ -53,6 +53,8 @@ func normalizeVKAuthMode(mode string) string {
 	switch strings.ToLower(strings.TrimSpace(mode)) {
 	case "legacy":
 		return "legacy"
+	case "maxcalls", "max":
+		return "maxcalls"
 	default:
 		return "vkcalls"
 	}
@@ -70,6 +72,10 @@ func getVKAuthMode() string {
 		return "vkcalls"
 	}
 	return mode
+}
+
+func authModeIsMax(mode string) bool {
+	return mode == "maxcalls"
 }
 
 func drainCaptchaResult() {
@@ -145,12 +151,13 @@ func main() {
 	port := flag.String("port", "", "переопределить порт TURN")
 	listen := flag.String("listen", "127.0.0.1:9000", "локальный адрес")
 	vkHash := flag.String("vk", "", "хеши VK-звонков (через запятую)")
+	callLink := flag.String("call", "", "ссылка на Max/VK звонок")
 	peerAddr := flag.String("peer", "", "адрес:порт VPS сервера")
 	numW := flag.Int("n", 24, "количество воркеров (кратно 12)")
 
 	deviceID := flag.String("device-id", "unknown", "уникальный ID устройства")
 	connPassword := flag.String("password", "", "пароль подключения")
-	vkAuthMode := flag.String("vk-auth-mode", "vkcalls", "режим получения VK TURN-кредов (vkcalls/legacy)")
+	vkAuthMode := flag.String("vk-auth-mode", "maxcalls", "режим получения TURN-кредов (maxcalls/vkcalls/legacy)")
 	captchaMode := flag.String("captcha-mode", "auto", "режим обхода капчи (auto/wv/rjs)")
 	fingerprint := flag.String("fingerprint", "chrome", "браузерный фингерпринт (chrome, safari, ios, android, firefox)")
 	clientIdsFlag := flag.String("client-ids", "", "ID клиентов VK через запятую")
@@ -160,8 +167,8 @@ func main() {
 	activeVKAuthMode := setVKAuthMode(*vkAuthMode)
 	activeCaptchaMode := setCaptchaMode(*captchaMode)
 
-	if *peerAddr == "" || *vkHash == "" {
-		log.Fatal("[КЛИЕНТ] Нужны -peer и -vk")
+	if *peerAddr == "" || (*vkHash == "" && *callLink == "") {
+		log.Fatal("[КЛИЕНТ] Нужны -peer и -vk или -call")
 	}
 
 	cleanPeerAddr := strings.TrimSpace(*peerAddr)
@@ -185,9 +192,14 @@ func main() {
 		SetActiveClientIds(*clientIdsFlag)
 	}
 
-	hashes := ParseHashes(*vkHash)
+	var hashes []string
+	if *callLink != "" {
+		hashes = ParseHashes(*callLink)
+	} else {
+		hashes = ParseHashes(*vkHash)
+	}
 	if len(hashes) == 0 {
-		log.Fatal("[КЛИЕНТ] Нет хешей VK")
+		log.Fatal("[КЛИЕНТ] Нет хешей звонков")
 	}
 
 	if *connPassword == "" {
@@ -263,8 +275,12 @@ func main() {
 	}
 
 	log.Println("[КЛИЕНТ] ═══════════════════════════════════════")
-	log.Printf("[КЛИЕНТ] VK Creds: Client IDs: %s", GetActiveClientIdsString())
-	log.Printf("[КЛИЕНТ] VK Auth: %s", activeVKAuthMode)
+	if authModeIsMax(activeVKAuthMode) {
+		log.Printf("[КЛИЕНТ] Provider: Max (call=%s)", hashes[0])
+	} else {
+		log.Printf("[КЛИЕНТ] VK Creds: Client IDs: %s", GetActiveClientIdsString())
+	}
+	log.Printf("[КЛИЕНТ] Auth: %s", activeVKAuthMode)
 	log.Printf("[КЛИЕНТ] TLS: %s fingerprint", GetActiveFingerprint())
 	log.Printf("[КЛИЕНТ] Воркеров: %d (групп: %d, по %d)", *numW, numGroups, workersPerGroup)
 	log.Printf("[КЛИЕНТ] Хешей: %d", len(hashes))
