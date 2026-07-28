@@ -11,7 +11,6 @@ import (
 	"net/http"
 	neturl "net/url"
 	"os"
-	"strings"
 	"time"
 
 	fhttp "github.com/bogdanfinn/fhttp"
@@ -342,7 +341,7 @@ func getMaxCredsViaWS2Path(ctx context.Context, link string, streamID int) (stri
 	}
 }
 
-func GetCreds(ctx context.Context, hash string, streamID int) (string, string, []string, error) {
+func getMaxCreds(ctx context.Context, hash string, streamID int) (string, string, []string, error) {
 	if getVKAuthMode() == "maxcalls" {
 		user, pass, addrs, err := getMaxCredsViaMaxCallsPath(ctx, hash, streamID)
 		if err == nil {

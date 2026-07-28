@@ -176,7 +176,7 @@ func getVKCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (s
 
 		var resp map[string]interface{}
 		if err := json.Unmarshal(body, &resp); err != nil {
-			return nil, newVKCallsFailure(step, vkCallsFailureDecode, fmt.Errorf("unmarshal JSON: %w, body: %s", err, truncateVKCallsLog(string(body), 200)))
+			return nil, newVKCallsFailure(step, vkCallsFailureDecode, fmt.Errorf("unmarshal JSON: %w, body: %s", err, truncateStr(string(body), 200)))
 		}
 		return resp, nil
 	}
@@ -277,7 +277,7 @@ func getVKCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (s
 		return "", "", nil, err
 	}
 	if okErr := vkCallsOKError(resp5); okErr != nil {
-		return "", "", nil, newVKCallsFailure(step5, vkCallsFailureOKCDN, fmt.Errorf("%w (resp: %s)", okErr, truncateVKCallsResp(resp5)))
+		return "", "", nil, newVKCallsFailure(step5, vkCallsFailureOKCDN, fmt.Errorf("%w (resp: %s)", okErr, truncateResp(resp5)))
 	}
 
 	user, err := apiExtractStr(resp5, "turn_server", "username")
@@ -312,7 +312,7 @@ func vkCallsAPIError(resp map[string]interface{}) error {
 	}
 	if int(code) == 14 {
 		if errJSON, err := json.Marshal(errObj); err == nil {
-			log.Printf("[VKCalls] captcha error response: %s", truncateVKCallsLog(string(errJSON), 300))
+			log.Printf("[VKCalls] captcha error response: %s", truncateStr(string(errJSON), 300))
 		}
 		return parseVkCaptchaError(errObj)
 	}
