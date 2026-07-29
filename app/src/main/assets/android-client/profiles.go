@@ -36,6 +36,12 @@ var profileList = []Profile{
 		SecChUaMobile:   "?0",
 		SecChUaPlatform: `"Linux"`,
 	},
+	{
+		UserAgent:       "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:132.0) Gecko/20100101 Firefox/132.0",
+		SecChUa:         `"Firefox";v="132", "Not-A.Brand";v="8", "Mozilla Firefox";v="132"`,
+		SecChUaMobile:   "?0",
+		SecChUaPlatform: `"Windows"`,
+	},
 }
 
 var activeFingerprint = "chrome"

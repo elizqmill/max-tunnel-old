@@ -42,6 +42,11 @@ jobs:
           unzip -q /tmp/$NDK_ZIP -d /tmp
           mv /tmp/android-ndk-r27c ${{ env.NDK_HOME }}
 
+      - name: go mod tidy
+        run: |
+          cd app/src/main/assets/android-client
+          go mod tidy
+
       - name: Build libclient.so (${{ matrix.arch }})
         run: |
           export CC=${{ env.NDK_HOME }}/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.cc }}
