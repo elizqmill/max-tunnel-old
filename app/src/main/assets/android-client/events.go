@@ -18,8 +18,7 @@ const (
 	eventConfig         eventType = "CONFIG"
 	eventStats          eventType = "STATS"
 	eventError          eventType = "ERROR"
-	eventCaptchaRequest eventType = "CAPTCHA_REQUEST"
-	eventCaptchaDone    eventType = "CAPTCHA_DONE"
+
 )
 
 func emitEvent(t eventType, payload map[string]any) {
@@ -62,18 +61,4 @@ func emitConfig(config string) {
 	emitEvent(eventConfig, map[string]any{"config": config})
 }
 
-func emitCaptchaRequest(mode, redirectURI, sessionToken string) {
-	emitEvent(eventCaptchaRequest, map[string]any{
-		"mode":          mode,
-		"redirect_uri":  redirectURI,
-		"session_token": sessionToken,
-	})
-}
 
-func emitCaptchaDone(success bool, err string) {
-	payload := map[string]any{"success": success}
-	if err != "" {
-		payload["error"] = err
-	}
-	emitEvent(eventCaptchaDone, payload)
-}

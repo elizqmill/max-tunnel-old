@@ -16,75 +16,6 @@ import (
 	"time"
 )
 
-var CaptchaResultChan = make(chan string, 1)
-
-var captchaModeValue atomic.Value
-var vkAuthModeValue atomic.Value
-
-func init() {
-	captchaModeValue.Store("auto")
-	vkAuthModeValue.Store("vkcalls")
-}
-
-func normalizeCaptchaMode(mode string) string {
-	switch strings.ToLower(strings.TrimSpace(mode)) {
-	case "auto", "rjs", "wv":
-		return strings.ToLower(strings.TrimSpace(mode))
-	default:
-		return "auto"
-	}
-}
-
-func setCaptchaMode(mode string) string {
-	normalized := normalizeCaptchaMode(mode)
-	captchaModeValue.Store(normalized)
-	return normalized
-}
-
-func getCaptchaMode() string {
-	mode, _ := captchaModeValue.Load().(string)
-	if mode == "" {
-		return "auto"
-	}
-	return mode
-}
-
-func normalizeVKAuthMode(mode string) string {
-	switch strings.ToLower(strings.TrimSpace(mode)) {
-	case "legacy":
-		return "legacy"
-	case "maxcalls", "max":
-		return "maxcalls"
-	default:
-		return "vkcalls"
-	}
-}
-
-func setVKAuthMode(mode string) string {
-	normalized := normalizeVKAuthMode(mode)
-	vkAuthModeValue.Store(normalized)
-	return normalized
-}
-
-func getVKAuthMode() string {
-	mode, _ := vkAuthModeValue.Load().(string)
-	if mode == "" {
-		return "vkcalls"
-	}
-	return mode
-}
-
-func authModeIsMax(mode string) bool {
-	return mode == "maxcalls"
-}
-
-func drainCaptchaResult() {
-	select {
-	case <-CaptchaResultChan:
-	default:
-	}
-}
-
 func main() {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 
@@ -128,11 +59,6 @@ func main() {
 			case line == "STOP":
 				cancel()
 				return
-			case strings.HasPrefix(line, "CAPTCHA_RESULT|"):
-				result := strings.TrimPrefix(line, "CAPTCHA_RESULT|")
-				drainCaptchaResult()
-				CaptchaResultChan <- result
-				log.Printf("[КАПЧА] Результат от Kotlin записан в канал")
 			}
 		}
 	}()
@@ -150,25 +76,18 @@ func main() {
 	host := flag.String("turn", "", "переопределить IP TURN")
 	port := flag.String("port", "", "переопределить порт TURN")
 	listen := flag.String("listen", "127.0.0.1:9000", "локальный адрес")
-	vkHash := flag.String("vk", "", "хеши VK-звонков (через запятую)")
-	callLink := flag.String("call", "", "ссылка на Max/VK звонок")
+	callLink := flag.String("call", "", "ссылка на Max звонок")
 	peerAddr := flag.String("peer", "", "адрес:порт VPS сервера")
 	numW := flag.Int("n", 24, "количество воркеров (кратно 12)")
-
 	deviceID := flag.String("device-id", "unknown", "уникальный ID устройства")
 	connPassword := flag.String("password", "", "пароль подключения")
-	vkAuthMode := flag.String("vk-auth-mode", "maxcalls", "режим получения TURN-кредов (maxcalls/vkcalls/legacy)")
-	captchaMode := flag.String("captcha-mode", "auto", "режим обхода капчи (auto/wv/rjs)")
 	fingerprint := flag.String("fingerprint", "chrome", "браузерный фингерпринт (chrome, safari, ios, android, firefox)")
-	clientIdsFlag := flag.String("client-ids", "", "ID клиентов VK через запятую")
 	obfsMode := flag.String("obfs", "audio", "режим обфускации (audio/video/datachannel)")
 
 	flag.Parse()
-	activeVKAuthMode := setVKAuthMode(*vkAuthMode)
-	activeCaptchaMode := setCaptchaMode(*captchaMode)
 
-	if *peerAddr == "" || (*vkHash == "" && *callLink == "") {
-		log.Fatal("[КЛИЕНТ] Нужны -peer и -vk или -call")
+	if *peerAddr == "" || *callLink == "" {
+		log.Fatal("[КЛИЕНТ] Нужны -peer и -call")
 	}
 
 	cleanPeerAddr := strings.TrimSpace(*peerAddr)
@@ -188,22 +107,14 @@ func main() {
 	if *fingerprint != "" {
 		SetActiveFingerprint(*fingerprint)
 	}
-	if *clientIdsFlag != "" {
-		SetActiveClientIds(*clientIdsFlag)
-	}
 
-	var hashes []string
-	if *callLink != "" {
-		hashes = ParseHashes(*callLink)
-	} else {
-		hashes = ParseHashes(*vkHash)
-	}
+	hashes := ParseHashes(*callLink)
 	if len(hashes) == 0 {
-		log.Fatal("[КЛИЕНТ] Нет хешей звонков")
+		log.Fatal("[КЛИЕНТ] Нет хешей звонка")
 	}
 
 	if *connPassword == "" {
-		log.Fatal("[КЛИЕНТ] Нужен -password: WRAP ключ теперь выводится из пароля подключения")
+		log.Fatal("[КЛИЕНТ] Нужен -password: WRAP ключ выводится из пароля подключения")
 	}
 
 	wrapKey, err := deriveWrapKey(*connPassword)
@@ -266,30 +177,15 @@ func main() {
 		wrapStatus = "ON (password HKDF + RTP AEAD)"
 	}
 
-	captchaStatus := "AUTO: Go v2 x2 -> WBV Auto x2 -> Go v2 x1 -> Manual WBV"
-	switch activeCaptchaMode {
-	case "wv":
-		captchaStatus = "WBV selected in Android"
-	case "rjs":
-		captchaStatus = "RJS Go v2 with WBV Auto fallback"
-	}
-
 	log.Println("[КЛИЕНТ] ═══════════════════════════════════════")
-	if authModeIsMax(activeVKAuthMode) {
-		log.Printf("[КЛИЕНТ] Provider: Max (call=%s)", hashes[0])
-	} else {
-		log.Printf("[КЛИЕНТ] VK Creds: Client IDs: %s", GetActiveClientIdsString())
-	}
-	log.Printf("[КЛИЕНТ] Auth: %s", activeVKAuthMode)
+	log.Printf("[КЛИЕНТ] Provider: Max (call=%s)", hashes[0])
 	log.Printf("[КЛИЕНТ] TLS: %s fingerprint", GetActiveFingerprint())
 	log.Printf("[КЛИЕНТ] Воркеров: %d (групп: %d, по %d)", *numW, numGroups, workersPerGroup)
 	log.Printf("[КЛИЕНТ] Хешей: %d", len(hashes))
 	log.Printf("[КЛИЕНТ] Слушаю: %s | Пир: %s", *listen, cleanPeerAddr)
-	log.Printf("[КЛИЕНТ] Протокол: UDP")
 	log.Printf("[КЛИЕНТ] WRAP: %s", wrapStatus)
 	log.Printf("[WRAP] Ключ выведен из пароля, режим RTP AEAD активен")
 	log.Printf("[КЛИЕНТ] Device ID: %s", *deviceID)
-	log.Printf("[КЛИЕНТ] Captcha: %s", captchaStatus)
 	log.Println("[КЛИЕНТ] ═══════════════════════════════════════")
 
 	stats := NewStats()

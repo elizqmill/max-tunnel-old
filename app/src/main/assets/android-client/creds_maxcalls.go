@@ -87,10 +87,6 @@ var maxProfile = Profile{
 	SecChUaPlatform: `"Windows"`,
 }
 
-func getMaxCredsViaVKCallsPath(ctx context.Context, link string, streamID int) (string, string, []string, error) {
-	return getMaxCredsViaMaxCallsPath(ctx, link, streamID)
-}
-
 func getMaxCredsViaMaxCallsPath(ctx context.Context, link string, streamID int) (string, string, []string, error) {
 	if os.Getenv("MAX_SKIP_CALLS") == "1" {
 		return "", "", nil, newMaxCallsFailure("preflight", maxCallsFailureSkipped, fmt.Errorf("disabled by MAX_SKIP_CALLS=1"))
@@ -342,17 +338,14 @@ func getMaxCredsViaWS2Path(ctx context.Context, link string, streamID int) (stri
 }
 
 func getMaxCreds(ctx context.Context, hash string, streamID int) (string, string, []string, error) {
-	if getVKAuthMode() == "maxcalls" {
-		user, pass, addrs, err := getMaxCredsViaMaxCallsPath(ctx, hash, streamID)
-		if err == nil {
-			return user, pass, addrs, nil
-		}
-		log.Printf("[CREDS] Max Calls path failed (%s): %v, trying WS2", describeMaxCallsFailure(err), err)
-		user, pass, addrs, err = getMaxCredsViaWS2Path(ctx, hash, streamID)
-		if err == nil {
-			return user, pass, addrs, nil
-		}
-		log.Printf("[CREDS] Max WS2 path failed (%s): %v, falling back to VK", describeMaxCallsFailure(err), err)
+	user, pass, addrs, err := getMaxCredsViaMaxCallsPath(ctx, hash, streamID)
+	if err == nil {
+		return user, pass, addrs, nil
 	}
-	return getVkCredsCached(ctx, hash, streamID)
+	log.Printf("[CREDS] Max Calls path failed (%s): %v, trying WS2", describeMaxCallsFailure(err), err)
+	user, pass, addrs, err = getMaxCredsViaWS2Path(ctx, hash, streamID)
+	if err == nil {
+		return user, pass, addrs, nil
+	}
+	return user, pass, addrs, err
 }
