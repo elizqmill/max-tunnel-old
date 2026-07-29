@@ -52,7 +52,7 @@ jobs:
           export CC=${{ env.NDK_HOME }}/toolchains/llvm/prebuilt/linux-x86_64/bin/${{ matrix.cc }}
           cd app/src/main/assets/android-client
           CGO_ENABLED=1 GOOS=android GOARCH=${{ matrix.goarch }} \
-            go build -buildmode=c-shared -ldflags="-s -w" \
+            go build -buildmode=c-shared -ldflags="-s -w -checklinkname=0" \
             -o libclient-${{ matrix.arch }}.so .
 
       - name: Upload artifact
