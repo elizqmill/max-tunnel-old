@@ -14,7 +14,7 @@ class SecureStringStore(context: Context) {
     private val appContext = context.applicationContext
 
     companion object {
-        private const val KEY_ALIAS = "wdtt.settings.secrets"
+        private const val KEY_ALIAS = "maxtunnel.settings.secrets"
         private const val ANDROID_KEYSTORE = "AndroidKeyStore"
         private const val TRANSFORMATION = "AES/GCM/NoPadding"
         private const val GCM_TAG_BITS = 128

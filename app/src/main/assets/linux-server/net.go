@@ -151,7 +151,7 @@ func getDefaultInterface() string {
 	if out != "" {
 		return strings.TrimSpace(out)
 	}
-	out = runCmdSilent("bash", "-c", "ip -o link show | awk -F': ' '{print $2}' | grep -v -E 'lo|wg|tun|wdtt' | head -1")
+	out = runCmdSilent("bash", "-c", "ip -o link show | awk -F': ' '{print $2}' | grep -v -E 'lo|wg|tun|maxtunnel' | head -1")
 	if out != "" {
 		return strings.TrimSpace(out)
 	}
@@ -239,9 +239,9 @@ func setupFullConeNAT(wgIface string) error {
 	switch {
 	case commandExists("iptables"):
 		for i := 0; i < 5; i++ {
-			exec.Command("iptables", "-t", "nat", "-D", "POSTROUTING", "-s", wgServerCIDR, "-o", extIface, "-m", "comment", "--comment", "WDTT_MANAGED", "-j", "MASQUERADE").Run()
+			exec.Command("iptables", "-t", "nat", "-D", "POSTROUTING", "-s", wgServerCIDR, "-o", extIface, "-m", "comment", "--comment", "MAXTUNNEL_MANAGED", "-j", "MASQUERADE").Run()
 		}
-		exec.Command("iptables", "-t", "nat", "-I", "POSTROUTING", "1", "-s", wgServerCIDR, "-o", extIface, "-m", "comment", "--comment", "WDTT_MANAGED", "-j", "MASQUERADE").Run()
+		exec.Command("iptables", "-t", "nat", "-I", "POSTROUTING", "1", "-s", wgServerCIDR, "-o", extIface, "-m", "comment", "--comment", "MAXTUNNEL_MANAGED", "-j", "MASQUERADE").Run()
 		natType = "MASQUERADE iptables ✅"
 		setupForwardRules(wgIface)
 	case commandExists("nft"):
@@ -259,26 +259,26 @@ func setupFullConeNAT(wgIface string) error {
 }
 
 func setupNftNAT(extIface string) {
-	exec.Command("nft", "add", "table", "ip", "wdtt").Run()
-	exec.Command("nft", "add", "chain", "ip", "wdtt", "postrouting", "{ type nat hook postrouting priority 100; }").Run()
-	exec.Command("nft", "add", "rule", "ip", "wdtt", "postrouting", "ip", "saddr", wgServerCIDR, "oifname", extIface, "masquerade").Run()
+	exec.Command("nft", "add", "table", "ip", "maxtunnel").Run()
+	exec.Command("nft", "add", "chain", "ip", "maxtunnel", "postrouting", "{ type nat hook postrouting priority 100; }").Run()
+	exec.Command("nft", "add", "rule", "ip", "maxtunnel", "postrouting", "ip", "saddr", wgServerCIDR, "oifname", extIface, "masquerade").Run()
 }
 
 func setupForwardRules(wgIface string) {
 	if commandExists("iptables") {
 		for i := 0; i < 5; i++ {
-			exec.Command("iptables", "-D", "FORWARD", "-i", wgIface, "-m", "comment", "--comment", "WDTT_MANAGED", "-j", "ACCEPT").Run()
-			exec.Command("iptables", "-D", "FORWARD", "-o", wgIface, "-m", "comment", "--comment", "WDTT_MANAGED", "-j", "ACCEPT").Run()
+			exec.Command("iptables", "-D", "FORWARD", "-i", wgIface, "-m", "comment", "--comment", "MAXTUNNEL_MANAGED", "-j", "ACCEPT").Run()
+			exec.Command("iptables", "-D", "FORWARD", "-o", wgIface, "-m", "comment", "--comment", "MAXTUNNEL_MANAGED", "-j", "ACCEPT").Run()
 		}
-		exec.Command("iptables", "-A", "FORWARD", "-i", wgIface, "-m", "comment", "--comment", "WDTT_MANAGED", "-j", "ACCEPT").Run()
-		exec.Command("iptables", "-A", "FORWARD", "-o", wgIface, "-m", "comment", "--comment", "WDTT_MANAGED", "-j", "ACCEPT").Run()
+		exec.Command("iptables", "-A", "FORWARD", "-i", wgIface, "-m", "comment", "--comment", "MAXTUNNEL_MANAGED", "-j", "ACCEPT").Run()
+		exec.Command("iptables", "-A", "FORWARD", "-o", wgIface, "-m", "comment", "--comment", "MAXTUNNEL_MANAGED", "-j", "ACCEPT").Run()
 		return
 	}
 	if commandExists("nft") {
-		exec.Command("nft", "add", "table", "inet", "wdtt").Run()
-		exec.Command("nft", "add", "chain", "inet", "wdtt", "forward", "{ type filter hook forward priority 0; policy accept; }").Run()
-		exec.Command("nft", "add", "rule", "inet", "wdtt", "forward", "iifname", wgIface, "accept").Run()
-		exec.Command("nft", "add", "rule", "inet", "wdtt", "forward", "oifname", wgIface, "accept").Run()
+		exec.Command("nft", "add", "table", "inet", "maxtunnel").Run()
+		exec.Command("nft", "add", "chain", "inet", "maxtunnel", "forward", "{ type filter hook forward priority 0; policy accept; }").Run()
+		exec.Command("nft", "add", "rule", "inet", "maxtunnel", "forward", "iifname", wgIface, "accept").Run()
+		exec.Command("nft", "add", "rule", "inet", "maxtunnel", "forward", "oifname", wgIface, "accept").Run()
 	}
 }
 

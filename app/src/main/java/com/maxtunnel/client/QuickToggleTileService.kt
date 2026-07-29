@@ -55,7 +55,7 @@ class QuickToggleTileService : TileService() {
 
             
             if (VpnService.prepare(this) != null) {
-                Toast.makeText(this, "Откройте WDTT и выдайте VPN-разрешение", Toast.LENGTH_LONG).show()
+                Toast.makeText(this, "Откройте MaxTunnel и выдайте VPN-разрешение", Toast.LENGTH_LONG).show()
                 openMainActivity()
                 return
             }
@@ -65,7 +65,7 @@ class QuickToggleTileService : TileService() {
                 try {
                     val intent = buildStartIntent()
                     if (intent == null) {
-                        Toast.makeText(this@QuickToggleTileService, "Заполните настройки подключения в WDTT", Toast.LENGTH_LONG).show()
+                        Toast.makeText(this@QuickToggleTileService, "Заполните настройки подключения в MaxTunnel", Toast.LENGTH_LONG).show()
                         openMainActivity()
                         return@launch
                     }
@@ -126,7 +126,7 @@ class QuickToggleTileService : TileService() {
     private fun updateTile(running: Boolean) {
         runCatching {
             qsTile?.apply {
-                label = "WDTT"
+                label = "MaxTunnel"
                 icon = Icon.createWithResource(this@QuickToggleTileService, R.drawable.ic_tile_logo_w)
                 state = if (running) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
                 if (Build.VERSION.SDK_INT >= 29) {

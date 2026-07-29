@@ -19,7 +19,7 @@ import java.io.ByteArrayInputStream
 
 class WireGuardHelper(context: Context) {
     private val appContext = context.applicationContext
-    private val backend = (appContext as WdttApplication).getBackend(context)
+    private val backend = (appContext as MaxTunnelApplication).getBackend(context)
 
     private companion object {
         const val EMPTY_WHITELIST_MESSAGE = "В режиме БС выберите хотя бы одно приложение"
@@ -29,7 +29,7 @@ class WireGuardHelper(context: Context) {
     }
 
     class WgTunnel : Tunnel {
-        override fun getName() = "wdtt"
+        override fun getName() = "maxtunnel"
         override fun onStateChange(newState: Tunnel.State) {}
     }
 

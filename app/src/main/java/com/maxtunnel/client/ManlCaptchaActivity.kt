@@ -22,8 +22,8 @@ import androidx.compose.ui.viewinterop.AndroidView
 class ManlCaptchaActivity : ComponentActivity() {
     private val interceptorJSCode = """
         (function() {
-            if (window.__wdtt_interceptor_installed) return;
-            window.__wdtt_interceptor_installed = true;
+            if (window.__maxtunnel_interceptor_installed) return;
+            window.__maxtunnel_interceptor_installed = true;
 
             const origFetch = window.fetch;
             window.fetch = async function() {
@@ -35,9 +35,9 @@ class ManlCaptchaActivity : ComponentActivity() {
                     try {
                         const data = await clone.json();
                         if (data.response && data.response.success_token) {
-                            window.WdttCaptcha.onSuccess(data.response.success_token);
+                            window.MaxCaptcha.onSuccess(data.response.success_token);
                         } else if (data.error) {
-                            window.WdttCaptcha.onError(JSON.stringify(data.error));
+                            window.MaxCaptcha.onError(JSON.stringify(data.error));
                         }
                     } catch(e) {}
                     return response;
@@ -48,19 +48,19 @@ class ManlCaptchaActivity : ComponentActivity() {
             const origXHROpen = XMLHttpRequest.prototype.open;
             const origXHRSend = XMLHttpRequest.prototype.send;
             XMLHttpRequest.prototype.open = function(method, url) {
-                this._wdtt_url = url;
+                this._maxtunnel_url = url;
                 return origXHROpen.apply(this, arguments);
             };
             XMLHttpRequest.prototype.send = function() {
                 const xhr = this;
-                if (xhr._wdtt_url && xhr._wdtt_url.includes('captchaNotRobot.check')) {
+                if (xhr._maxtunnel_url && xhr._maxtunnel_url.includes('captchaNotRobot.check')) {
                     xhr.addEventListener('load', function() {
                         try {
                             const data = JSON.parse(xhr.responseText);
                             if (data.response && data.response.success_token) {
-                                window.WdttCaptcha.onSuccess(data.response.success_token);
+                                window.MaxCaptcha.onSuccess(data.response.success_token);
                             } else if (data.error) {
-                                window.WdttCaptcha.onError(JSON.stringify(data.error));
+                                window.MaxCaptcha.onError(JSON.stringify(data.error));
                             }
                         } catch(e) {}
                     });
@@ -74,7 +74,7 @@ class ManlCaptchaActivity : ComponentActivity() {
         (function() {
             document.addEventListener('click', function(e) {
                 if (e.target.closest('.vkc__ModalCardBase-module__dismiss')) {
-                    window.WdttCaptcha.onCancelAndStop();
+                    window.MaxCaptcha.onCancelAndStop();
                 }
             });
 
@@ -186,7 +186,7 @@ class ManlCaptchaActivity : ComponentActivity() {
                                                     ManlCaptchaWebViewManager.notifyResult(Result.failure(Exception("Cancelled and stopped by user")))
                                                     finish()
                                                 }
-                                            }, "WdttCaptcha")
+                                            }, "MaxCaptcha")
 
                                             webViewClient = object : WebViewClient() {
                                                 override fun onPageStarted(view: WebView?, url: String?, favicon: android.graphics.Bitmap?) {

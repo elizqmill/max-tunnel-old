@@ -130,7 +130,7 @@ class MainActivity : ComponentActivity() {
             val activeClientIds by settingsStore.activeClientIds.collectAsStateWithLifecycle(initialValue = "8202606,6287487")
             val scope = rememberCoroutineScope()
 
-            WDTTTheme(themeMode = themeMode, dynamicColor = isDynamicColor, themePalette = themePalette) {
+            MaxTunnelTheme(themeMode = themeMode, dynamicColor = isDynamicColor, themePalette = themePalette) {
                 MainScreen(
                     settingsStore = settingsStore,
                     themeMode = themeMode,
@@ -237,7 +237,7 @@ fun MainScreen(
     val density = LocalDensity.current
     val scope = rememberCoroutineScope()
     val activeProfile by settingsStore.activeProfile.collectAsStateWithLifecycle(initialValue = 0)
-    val wdttLinkMode by settingsStore.wdttLinkMode.collectAsStateWithLifecycle(initialValue = false)
+    val maxtunnelLinkMode by settingsStore.maxtunnelLinkMode.collectAsStateWithLifecycle(initialValue = false)
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
     var dragTargetIndex by remember { mutableIntStateOf(-1) }
     var dragProgress by remember { mutableFloatStateOf(0f) }
@@ -249,8 +249,8 @@ fun MainScreen(
     val safeBottomInset = with(density) { WindowInsets.safeDrawing.getBottom(density).toDp() }
     val navOverlayReserve = safeBottomInset + 96.dp
 
-    val activeNavItems = remember(wdttLinkMode) {
-        if (wdttLinkMode) {
+    val activeNavItems = remember(maxtunnelLinkMode) {
+        if (maxtunnelLinkMode) {
             navItems.filter { it.id != 1 }
         } else {
             navItems
@@ -259,8 +259,8 @@ fun MainScreen(
     val actionsExpanded = rememberSaveable { mutableStateOf(false) }
     val projectExpanded = rememberSaveable { mutableStateOf(false) }
 
-    LaunchedEffect(wdttLinkMode) {
-        if (wdttLinkMode && selectedTab == 1) {
+    LaunchedEffect(maxtunnelLinkMode) {
+        if (maxtunnelLinkMode && selectedTab == 1) {
             selectedTab = 0
         }
     }
@@ -286,7 +286,7 @@ fun MainScreen(
             )
 
             if (release == null) {
-                Log.w("WDTT", "[WARN] Update check: no release info, local=$currentVersion reason=$reason")
+                Log.w("MaxTunnel", "[WARN] Update check: no release info, local=$currentVersion reason=$reason")
                 return
             }
 
@@ -295,7 +295,7 @@ fun MainScreen(
             val postponeUntil = settingsStore.updatePostponeUntil.first()
             val isPostponed = postponeVer == release.versionTag && checkedAt < postponeUntil
             Log.i(
-                "WDTT",
+                "MaxTunnel",
                 "Update check: local=$currentVersion remote=${release.versionTag} newer=$hasUpdate postponed=$isPostponed reason=$reason"
             )
 
@@ -331,7 +331,7 @@ fun MainScreen(
                     .fillMaxSize()
                     .padding(padding)
                     .consumeWindowInsets(padding)
-                    .pointerInput(selectedTab, wdttLinkMode) {
+                    .pointerInput(selectedTab, maxtunnelLinkMode) {
                         var totalDrag = 0f
                         detectHorizontalDragGestures(
                             onDragStart = {
@@ -385,7 +385,7 @@ fun MainScreen(
                 ) { tab ->
                     when (tab) {
                         0 -> SettingsTab()
-                        1 -> if (!wdttLinkMode) DeployTab() else Spacer(modifier = Modifier.fillMaxSize())
+                        1 -> if (!maxtunnelLinkMode) DeployTab() else Spacer(modifier = Modifier.fillMaxSize())
                         2 -> ExceptionsTab()
                         3 -> LogsTab()
                         4 -> InfoTab(actionsExpandedState = actionsExpanded, projectExpandedState = projectExpanded)
@@ -582,7 +582,7 @@ private fun ProxyNavigationBar(
                                 )
                                 if (item.id == 3 && unreadErrors > 0) {
                                     Badge(
-                                        containerColor = if (tunnelRunning) colors.primary else WDTTColors.warning,
+                                        containerColor = if (tunnelRunning) colors.primary else MaxTunnelColors.warning,
                                         contentColor = colors.onPrimary,
                                         modifier = Modifier.offset(x = 12.dp, y = (-8).dp)
                                     ) {

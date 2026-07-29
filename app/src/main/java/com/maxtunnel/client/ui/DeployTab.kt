@@ -35,7 +35,7 @@ import com.jcraft.jsch.Session
 import com.maxtunnel.client.DeployManager
 import com.maxtunnel.client.SettingsStore
 import com.maxtunnel.client.TunnelManager
-import com.maxtunnel.client.WDTTColors
+import com.maxtunnel.client.MaxTunnelColors
 import com.maxtunnel.client.ui.dialogs.DeploySecretsDialog
 import com.maxtunnel.client.ui.dialogs.UninstallConfirmDialog
 import kotlinx.coroutines.Dispatchers
@@ -389,11 +389,11 @@ fun DeployTab() {
                                     session = createSSHSession(ip, effectiveLogin, password, savedSshPort.toIntOrNull() ?: 22)
                                     DeployManager.activeSession = session
                                     val ssh = SSHClient(session, password)
-                                    ssh.upload(file, "/tmp/wdtt-server")
+                                    ssh.upload(file, "/tmp/maxtunnel-server")
                                     file.delete()
                                     DeployManager.updateProgress(0.6f, "Обновление...")
                                     ssh.exec(
-                                        rootCommand("env WDTT_DTLS_PORT=$savedServerDtlsPort WDTT_WG_PORT=$savedServerWgPort WDTT_SSH_PORT=$savedSshPort bash /tmp/deploy.sh update"),
+                                        rootCommand("env MAXTUNNEL_DTLS_PORT=$savedServerDtlsPort MAXTUNNEL_WG_PORT=$savedServerWgPort MAXTUNNEL_SSH_PORT=$savedSshPort bash /tmp/deploy.sh update"),
                                         timeout = 60000L
                                     )
                                     settingsStore.saveDeployServerVersion(availableVersion)
@@ -466,19 +466,19 @@ fun DeployTab() {
             Surface(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
-                color = WDTTColors.connected.copy(alpha = 0.12f),
+                color = MaxTunnelColors.connected.copy(alpha = 0.12f),
                 contentColor = MaterialTheme.colorScheme.onSurface,
-                border = BorderStroke(1.dp, WDTTColors.connected.copy(alpha = 0.4f))
+                border = BorderStroke(1.dp, MaxTunnelColors.connected.copy(alpha = 0.4f))
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = WDTTColors.connected)
+                    Icon(Icons.Default.CheckCircle, contentDescription = null, tint = MaxTunnelColors.connected)
                     Spacer(Modifier.width(8.dp))
                     Text(
                         text = "Деплой успешно завершен ($successCountdown)",
-                        color = WDTTColors.connected,
+                        color = MaxTunnelColors.connected,
                         fontWeight = FontWeight.Bold,
                         style = MaterialTheme.typography.bodyMedium
                     )
@@ -519,7 +519,7 @@ private class SSHClient(private val session: Session, private val pass: String) 
             val reader = input.bufferedReader()
             val errReader = err.bufferedReader()
             val startTime = System.currentTimeMillis()
-            val progressRegex = Regex("^WDTT_PROGRESS\\|(\\d+\\.?\\d*)\\|(.+)$")
+            val progressRegex = Regex("^MAXTUNNEL_PROGRESS\\|(\\d+\\.?\\d*)\\|(.+)$")
 
             while (!channel.isClosed || reader.ready() || errReader.ready()) {
                 if (System.currentTimeMillis() - startTime > timeout) {
@@ -535,7 +535,7 @@ private class SSHClient(private val session: Session, private val pass: String) 
                         if (match != null) {
                             val p = match.groupValues[1].toFloatOrNull() ?: 0f
                             DeployManager.updateProgress(p, match.groupValues[2])
-                        } else if (!line.contains("WDTT_PROGRESS")) {
+                        } else if (!line.contains("MAXTUNNEL_PROGRESS")) {
                             val clean = line.replace(Regex("\u001B\\[[;\\d]*m"), "")
                             result.appendLine(clean)
                             if (clean.contains("[✗]") || clean.contains("FAIL") ||
@@ -634,7 +634,7 @@ private fun File.containsBinaryToken(token: String): Boolean {
 
 private fun isUnsafeLegacyServerAsset(serverFile: File): Boolean {
     return serverFile.containsBinaryToken("/etc/wireguard") ||
-        (serverFile.containsBinaryToken("wg0") && !serverFile.containsBinaryToken("wdtt0"))
+        (serverFile.containsBinaryToken("wg0") && !serverFile.containsBinaryToken("mt0"))
 }
 
 private suspend fun performDeploy(
@@ -674,20 +674,20 @@ private suspend fun performDeploy(
         if (isUnsafeLegacyServerAsset(serverFile)) {
             scriptFile.delete()
             serverFile.delete()
-            DeployManager.writeError("Unsafe legacy server asset: найдено wg0 или /etc/wireguard. Нужна пересборка server под wdtt0 и /etc/wdtt.")
+            DeployManager.writeError("Unsafe legacy server asset: найдено wg0 или /etc/wireguard. Нужна пересборка server под mt0 и /etc/maxtunnel.")
             DeployManager.stopDeploy("Нужна пересборка server asset")
             return@withContext false
         }
 
         onProgress(0.06f, "Загрузка на сервер...")
         ssh.upload(scriptFile, "/tmp/deploy.sh")
-        ssh.upload(serverFile, "/tmp/wdtt-server")
+        ssh.upload(serverFile, "/tmp/maxtunnel-server")
         scriptFile.delete()
         serverFile.delete()
 
         onProgress(0.08f, "Установка...")
         val output = ssh.exec(
-            rootCommand("env WDTT_ARGS=${shellQuote(args)} WDTT_DTLS_PORT=$dtlsPort WDTT_WG_PORT=$wgPort WDTT_SSH_PORT=$port bash /tmp/deploy.sh"),
+            rootCommand("env MAXTUNNEL_ARGS=${shellQuote(args)} MAXTUNNEL_DTLS_PORT=$dtlsPort MAXTUNNEL_WG_PORT=$wgPort MAXTUNNEL_SSH_PORT=$port bash /tmp/deploy.sh"),
             timeout = CMD_TIMEOUT
         )
 
@@ -732,20 +732,20 @@ private suspend fun performUninstall(
         onProgress(0.15f, "Остановка сервиса...")
         ssh.exec(
             rootCommand(
-                "systemctl unmask wdtt 2>/dev/null || true; " +
-                    "systemctl stop wdtt 2>/dev/null || true; " +
-                    "systemctl disable wdtt 2>/dev/null || true; " +
-                    "rm -f /etc/systemd/system/wdtt.service; " +
+                "systemctl unmask maxtunnel 2>/dev/null || true; " +
+                    "systemctl stop maxtunnel 2>/dev/null || true; " +
+                    "systemctl disable maxtunnel 2>/dev/null || true; " +
+                    "rm -f /etc/systemd/system/maxtunnel.service; " +
                     "systemctl daemon-reload 2>/dev/null || true"
             ),
             timeout = 15000L
         )
 
         onProgress(0.30f, "Удаление через deploy.sh...")
-        ssh.exec(rootCommand("[ -f /tmp/deploy.sh ] && env WDTT_DTLS_PORT=$dtlsPort WDTT_WG_PORT=$wgPort WDTT_SSH_PORT=$port bash /tmp/deploy.sh uninstall 2>/dev/null || true"), timeout = 30000L)
+        ssh.exec(rootCommand("[ -f /tmp/deploy.sh ] && env MAXTUNNEL_DTLS_PORT=$dtlsPort MAXTUNNEL_WG_PORT=$wgPort MAXTUNNEL_SSH_PORT=$port bash /tmp/deploy.sh uninstall 2>/dev/null || true"), timeout = 30000L)
 
         onProgress(0.45f, "Удаление бинарника...")
-        ssh.exec(rootCommand("pkill -x wdtt-server 2>/dev/null || true; rm -f /usr/local/bin/wdtt-server"), timeout = 10000L)
+        ssh.exec(rootCommand("pkill -x maxtunnel-server 2>/dev/null || true; rm -f /usr/local/bin/maxtunnel-server"), timeout = 10000L)
 
         onProgress(0.60f, "Очистка firewall...")
         ssh.exec(
@@ -753,38 +753,38 @@ private suspend fun performUninstall(
                 "if command -v iptables >/dev/null 2>&1; then " +
                     "for i in 1 2 3 4 5; do " +
                     "for iface in $(ls /sys/class/net 2>/dev/null || true); do " +
-                    "iptables -t nat -D POSTROUTING -s 10.66.66.0/24 -o \"${'$'}iface\" -m comment --comment WDTT_MANAGED -j MASQUERADE 2>/dev/null || true; " +
+                    "iptables -t nat -D POSTROUTING -s 10.66.66.0/24 -o \"${'$'}iface\" -m comment --comment MAXTUNNEL_MANAGED -j MASQUERADE 2>/dev/null || true; " +
                     "done; " +
-                    "iptables -D INPUT -p udp --dport $dtlsPort -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
-                    "iptables -D INPUT -p udp --dport $wgPort -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
-                    "iptables -D INPUT -p udp --dport 56000 -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
-                    "iptables -D INPUT -p udp --dport 56001 -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
-                    "iptables -D INPUT -p tcp --dport $port -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
-                    "iptables -D INPUT -p tcp --dport 22 -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
-                    "iptables -D FORWARD -i wdtt0 -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
-                    "iptables -D FORWARD -o wdtt0 -m comment --comment WDTT_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D INPUT -p udp --dport $dtlsPort -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D INPUT -p udp --dport $wgPort -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D INPUT -p udp --dport 56000 -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D INPUT -p udp --dport 56001 -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D INPUT -p tcp --dport $port -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D INPUT -p tcp --dport 22 -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D FORWARD -i mt0 -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
+                    "iptables -D FORWARD -o mt0 -m comment --comment MAXTUNNEL_MANAGED -j ACCEPT 2>/dev/null || true; " +
                     "done; fi; " +
                     "if command -v nft >/dev/null 2>&1; then " +
-                    "nft delete table ip wdtt 2>/dev/null || true; " +
-                    "nft delete table inet wdtt 2>/dev/null || true; " +
-                    "nft delete table inet wdtt_mangle 2>/dev/null || true; " +
+                    "nft delete table ip maxtunnel 2>/dev/null || true; " +
+                    "nft delete table inet maxtunnel 2>/dev/null || true; " +
+                    "nft delete table inet maxtunnel_mangle 2>/dev/null || true; " +
                     "fi"
             ),
             timeout = 15000L
         )
 
-        onProgress(0.75f, "Удаление WDTT-интерфейса...")
+        onProgress(0.75f, "Удаление MT-интерфейса...")
         ssh.exec(
             rootCommand(
-                "ip link show wdtt0 >/dev/null 2>&1 && ip link del wdtt0 2>/dev/null || true; " +
-                    "[ -d /etc/wdtt ] && find /etc/wdtt -mindepth 1 -maxdepth 1 ! -name passwords.json -exec rm -rf {} + 2>/dev/null || true; " +
-                    "[ -f /etc/wdtt/passwords.json ] && chmod 600 /etc/wdtt/passwords.json 2>/dev/null || true"
+                "ip link show mt0 >/dev/null 2>&1 && ip link del mt0 2>/dev/null || true; " +
+                    "[ -d /etc/maxtunnel ] && find /etc/maxtunnel -mindepth 1 -maxdepth 1 ! -name passwords.json -exec rm -rf {} + 2>/dev/null || true; " +
+                    "[ -f /etc/maxtunnel/passwords.json ] && chmod 600 /etc/maxtunnel/passwords.json 2>/dev/null || true"
             ),
             timeout = 10000L
         )
 
         onProgress(0.90f, "Очистка sysctl...")
-        ssh.exec(rootCommand("rm -f /etc/sysctl.d/99-wdtt.conf; sysctl --system >/dev/null 2>&1 || true"), timeout = 15000L)
+        ssh.exec(rootCommand("rm -f /etc/sysctl.d/99-maxtunnel.conf; sysctl --system >/dev/null 2>&1 || true"), timeout = 15000L)
 
         onProgress(1.0f, "Готово!")
         DeployManager.stopDeploy("success")

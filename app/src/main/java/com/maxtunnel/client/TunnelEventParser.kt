@@ -4,7 +4,7 @@ import org.json.JSONObject
 
 object TunnelEventParser {
 
-    private const val PREFIX = "__WDTT_EVENT__|"
+    private const val PREFIX = "__MAXTUNNEL_EVENT__|"
 
     sealed class Event {
         data class Started(val message: String = "") : Event()

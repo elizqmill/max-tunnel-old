@@ -295,7 +295,7 @@ object TunnelManager {
                 env["LD_LIBRARY_PATH"] = context.applicationInfo.nativeLibraryDir
                 
                 
-                env["WDTT_EVENTS"] = "1"
+                env["MAXTUNNEL_EVENTS"] = "1"
 
                 process = pb.start()
                 processStartedAtMs = System.currentTimeMillis()

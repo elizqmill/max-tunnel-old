@@ -10,7 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 
-class WdttApplication : Application() {
+class MaxTunnelApplication : Application() {
     @Volatile
     private var backendInstance: GoBackend? = null
 
@@ -26,12 +26,12 @@ class WdttApplication : Application() {
         
         CoroutineScope(SupervisorJob() + Dispatchers.IO).launch {
             runCatching {
-                val backend = getBackend(this@WdttApplication)
+                val backend = getBackend(this@MaxTunnelApplication)
                 val tunnel = WireGuardHelper.WgTunnel()
                 backend.setState(tunnel, Tunnel.State.DOWN, null)
-                Log.d("WdttApp", "Успешно очищен фантомный VPN при холодном старте")
+                Log.d("MaxTunnelApp", "Успешно очищен фантомный VPN при холодном старте")
             }.onFailure {
-                Log.w("WdttApp", "Не удалось очистить фантомный VPN: ${it.message}")
+                Log.w("MaxTunnelApp", "Не удалось очистить фантомный VPN: ${it.message}")
             }
         }
 
@@ -39,10 +39,10 @@ class WdttApplication : Application() {
         CoroutineScope(SupervisorJob() + Dispatchers.Main).launch {
             try {
                 TunnelManager.running.collect {
-                    VpnWidgetProvider.updateAllWidgets(this@WdttApplication)
+                    VpnWidgetProvider.updateAllWidgets(this@MaxTunnelApplication)
                 }
             } catch (e: Exception) {
-                Log.e("WdttApp", "Не удалось обновить виджеты: ${e.message}")
+                Log.e("MaxTunnelApp", "Не удалось обновить виджеты: ${e.message}")
             }
         }
 
@@ -54,7 +54,7 @@ class WdttApplication : Application() {
                     TunnelManager.isLoggingEnabled = enabled
                 }
             } catch (e: Exception) {
-                Log.e("WdttApp", "Не удалось отслеживать флаг логирования: ${e.message}")
+                Log.e("MaxTunnelApp", "Не удалось отслеживать флаг логирования: ${e.message}")
             }
         }
     }

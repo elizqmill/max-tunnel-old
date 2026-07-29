@@ -26,7 +26,7 @@ object DeployManager {
     val availableVersion = MutableStateFlow("")
     val currentVersion = MutableStateFlow("")
 
-    private const val GITHUB_REPO = "elizqmill/wdtt-server"
+    private const val GITHUB_REPO = "elizqmill/maxtunnel-server"
 
     @Volatile
     var activeSession: com.jcraft.jsch.Session? = null
@@ -122,7 +122,7 @@ object DeployManager {
             if (version.isEmpty()) return@withContext null
 
             onProgress(0.1f, "Скачивание $version...")
-            val url = URL("https://github.com/$GITHUB_REPO/releases/download/$version/wdtt-server")
+            val url = URL("https://github.com/$GITHUB_REPO/releases/download/$version/maxtunnel-server")
             val conn = url.openConnection() as HttpURLConnection
             conn.connectTimeout = 15000
             conn.readTimeout = 60000
@@ -130,7 +130,7 @@ object DeployManager {
 
             val total = conn.contentLengthLong
             val input = conn.inputStream
-            val file = File(context.cacheDir, "wdtt-server-update")
+            val file = File(context.cacheDir, "maxtunnel-server-update")
             FileOutputStream(file).use { output ->
                 val buf = ByteArray(8192)
                 var downloaded = 0L

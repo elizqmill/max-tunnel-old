@@ -13,7 +13,7 @@ const val DEFAULT_UPDATE_CHECK_INTERVAL_HOURS = 12
 const val UPDATE_DIALOG_ACTION_POSTPONED = "postponed"
 const val UPDATE_DIALOG_ACTION_UPDATE = "update"
 
-private const val UPDATE_LOG_TAG = "WDTT"
+private const val UPDATE_LOG_TAG = "MaxTunnel"
 private const val GITHUB_RELEASES_URL = "https://api.github.com/repos/elizqmill/max-tunnel-old/releases?per_page=30"
 private const val GITHUB_LATEST_RELEASE_URL = "https://api.github.com/repos/elizqmill/max-tunnel-old/releases/latest"
 private const val GITHUB_LATEST_RELEASE_WEB_URL = "https://github.com/elizqmill/max-tunnel-old/releases/latest"
@@ -137,7 +137,7 @@ private fun fetchReleaseFromLatestWebRedirect(): AppReleaseInfo? {
         conn.instanceFollowRedirects = false
         conn.requestMethod = "GET"
         conn.setRequestProperty("Accept", "text/html,*/*")
-        conn.setRequestProperty("User-Agent", "WDTTAndroid/${BuildConfig.VERSION_NAME}")
+        conn.setRequestProperty("User-Agent", "MaxTunnelAndroid/${BuildConfig.VERSION_NAME}")
         conn.connectTimeout = 8_000
         conn.readTimeout = 8_000
 
@@ -195,7 +195,7 @@ private fun fetchHttpText(
         if (isGitHubApi) {
             conn.setRequestProperty("X-GitHub-Api-Version", "2022-11-28")
         }
-        conn.setRequestProperty("User-Agent", "WDTTAndroid/${BuildConfig.VERSION_NAME}")
+        conn.setRequestProperty("User-Agent", "MaxTunnelAndroid/${BuildConfig.VERSION_NAME}")
         conn.connectTimeout = 8_000
         conn.readTimeout = 8_000
 

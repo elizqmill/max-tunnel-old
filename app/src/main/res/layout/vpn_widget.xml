@@ -17,7 +17,7 @@
             android:id="@+id/widget_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="WDTT"
+            android:text="MaxTunnel"
             android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold" />

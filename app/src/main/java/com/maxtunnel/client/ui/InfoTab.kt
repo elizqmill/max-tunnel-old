@@ -88,7 +88,7 @@ import com.maxtunnel.client.R
 import com.maxtunnel.client.SettingsStore
 import com.maxtunnel.client.UPDATE_DIALOG_ACTION_POSTPONED
 import com.maxtunnel.client.UPDATE_DIALOG_ACTION_UPDATE
-import com.maxtunnel.client.WDTTColors
+import com.maxtunnel.client.MaxTunnelColors
 import com.maxtunnel.client.fetchLatestReleaseInfo
 import com.maxtunnel.client.isNewerVersion
 import kotlinx.coroutines.launch
@@ -826,7 +826,7 @@ private fun DonateDialog(onDismiss: () -> Unit) {
                         .height(62.dp),
                     shape = RoundedCornerShape(22.dp),
                     colors = ButtonDefaults.buttonColors(
-                        containerColor = WDTTColors.donate,
+                        containerColor = MaxTunnelColors.donate,
                         contentColor = Color.White
                     )
                 ) {

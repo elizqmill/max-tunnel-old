@@ -22,7 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import androidx.core.view.WindowCompat
 
-val WDTTTypography = Typography(
+val MaxTunnelTypography = Typography(
     displayLarge = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 57.sp, lineHeight = 64.sp),
     displayMedium = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 45.sp, lineHeight = 52.sp),
     displaySmall = TextStyle(fontFamily = FontFamily.Default, fontWeight = FontWeight.Bold, fontSize = 36.sp, lineHeight = 44.sp),
@@ -186,7 +186,7 @@ private fun getAppColorScheme(palette: String, isDark: Boolean): androidx.compos
     }
 }
 
-object WDTTColors {
+object MaxTunnelColors {
     
     val connected = Color(0xFF4CAF50)
     val connectedContainer = Color(0xFF4CAF50).copy(alpha = 0.12f)
@@ -219,7 +219,7 @@ object WDTTColors {
 }
 
 @Composable
-fun WDTTTheme(
+fun MaxTunnelTheme(
     themeMode: String = "system",
     dynamicColor: Boolean = false,
     themePalette: String = "indigo",
@@ -264,7 +264,7 @@ fun WDTTTheme(
 
     MaterialTheme(
         colorScheme = colorScheme,
-        typography = WDTTTypography,
+        typography = MaxTunnelTypography,
         content = content
     )
 }

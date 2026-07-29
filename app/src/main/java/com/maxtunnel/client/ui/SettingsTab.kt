@@ -47,7 +47,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maxtunnel.client.SettingsStore
 import com.maxtunnel.client.TunnelManager
 import com.maxtunnel.client.TunnelService
-import com.maxtunnel.client.WDTTColors
+import com.maxtunnel.client.MaxTunnelColors
 import com.maxtunnel.client.ui.dialogs.HashesDialog
 import com.maxtunnel.client.ui.dialogs.SecretsDialog
 import com.maxtunnel.client.ui.utils.stripVkUrlStatic
@@ -90,8 +90,8 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
     val savedListenPort by settingsStore.listenPort.collectAsStateWithLifecycle(initialValue = 9000)
 
     val activeProfile by settingsStore.activeProfile.collectAsStateWithLifecycle(initialValue = 0)
-    val wdttLinkMode by settingsStore.wdttLinkMode.collectAsStateWithLifecycle(initialValue = false)
-    val wdttLink by settingsStore.wdttLink.collectAsStateWithLifecycle(initialValue = "")
+    val maxtunnelLinkMode by settingsStore.maxtunnelLinkMode.collectAsStateWithLifecycle(initialValue = false)
+    val maxtunnelLink by settingsStore.maxtunnelLink.collectAsStateWithLifecycle(initialValue = "")
 
     val activeFingerprint by settingsStore.selectedFingerprint.collectAsStateWithLifecycle(initialValue = "firefox")
     val activeClientIds by settingsStore.activeClientIds.collectAsStateWithLifecycle(initialValue = "8202606,6287487")
@@ -128,17 +128,17 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
 
     val allHashes = remember(vkHash1, vkHash2, vkHash3, vkHash4) { listOf(vkHash1, vkHash2, vkHash3, vkHash4) }
     val uniqueHashes = remember(vkHash1, vkHash2, vkHash3, vkHash4) { allHashes.filter { it.isNotBlank() && it.length >= 16 }.distinct() }
-    val parsedLinkHashes = remember(wdttLink) {
-        if (wdttLink.trim().startsWith("wdtt://")) {
-            val clean = wdttLink.trim().removePrefix("wdtt://")
+    val parsedLinkHashes = remember(maxtunnelLink) {
+        if (maxtunnelLink.trim().startsWith("maxtunnel://")) {
+            val clean = maxtunnelLink.trim().removePrefix("maxtunnel://")
             val parts = clean.split(":")
             if (parts.size >= 6) {
                 parts[5].split(",").filter { stripVkUrlStatic(it).isNotBlank() }
             } else emptyList()
         } else emptyList()
     }
-    val filledHashCount = remember(vkHash1, vkHash2, vkHash3, vkHash4, wdttLinkMode, parsedLinkHashes) { 
-        if (wdttLinkMode) parsedLinkHashes.size else uniqueHashes.size 
+    val filledHashCount = remember(vkHash1, vkHash2, vkHash3, vkHash4, maxtunnelLinkMode, parsedLinkHashes) { 
+        if (maxtunnelLinkMode) parsedLinkHashes.size else uniqueHashes.size 
     }
     val combinedHashes = remember(vkHash1, vkHash2, vkHash3, vkHash4) { uniqueHashes.joinToString(",") }
     val dynamicMaxWorkers = remember(filledHashCount) { (filledHashCount.coerceAtLeast(1) * 27).toFloat() }
@@ -268,9 +268,9 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
 
     val isPeerValid = peerInput.isNotBlank() && !peerInput.contains(":")
     val isHashesValid = combinedHashes.isNotBlank()
-    val isLinkValid = wdttLink.trim().startsWith("wdtt://") && wdttLink.trim().split(":").size >= 6 && wdttLink.trim().split(":")[5].isNotBlank()
+    val isLinkValid = maxtunnelLink.trim().startsWith("maxtunnel://") && maxtunnelLink.trim().split(":").size >= 6 && maxtunnelLink.trim().split(":")[5].isNotBlank()
     val isManualValid = isPeerValid && isHashesValid && savedConnectionPassword.isNotBlank() && !hasInputHashErrors
-    val isValid = if (wdttLinkMode) isLinkValid else isManualValid
+    val isValid = if (maxtunnelLinkMode) isLinkValid else isManualValid
     val effectiveServerDtlsPort = if (manualPortsEnabled) serverDtlsPortInput.toIntOrNull()?.coerceIn(1, 65535) ?: 56000 else 56000
     val effectiveLocalPort = if (manualPortsEnabled) portInput.toIntOrNull()?.coerceIn(1, 65535) ?: 9000 else 9000
     var pendingStartAfterVpnPermission by remember { mutableStateOf(false) }
@@ -295,8 +295,8 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
         var finalLocalPort = effectiveLocalPort
         var finalPassword = savedConnectionPassword
 
-        if (wdttLinkMode && wdttLink.trim().startsWith("wdtt://")) {
-            val clean = wdttLink.trim().removePrefix("wdtt://")
+        if (maxtunnelLinkMode && maxtunnelLink.trim().startsWith("maxtunnel://")) {
+            val clean = maxtunnelLink.trim().removePrefix("maxtunnel://")
             val parts = clean.split(":")
             if (parts.size >= 5) {
                 val ip = parts[0]
@@ -403,7 +403,7 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            if (!wdttLinkMode) {
+            if (!maxtunnelLinkMode) {
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     
                     Text(
@@ -723,27 +723,27 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
                             modifier = Modifier.weight(1f)
                         )
                         Switch(
-                            checked = wdttLinkMode,
+                            checked = maxtunnelLinkMode,
                             onCheckedChange = { enabled ->
                                 scope.launch {
-                                    settingsStore.saveWdttLinkMode(enabled)
+                                    settingsStore.saveMaxtunnelLinkMode(enabled)
                                 }
                             }
                         )
                     }
 
-                    if (wdttLinkMode) {
+                    if (maxtunnelLinkMode) {
                         Column {
-                            var linkText by remember(wdttLink) { mutableStateOf(wdttLink) }
+                            var linkText by remember(maxtunnelLink) { mutableStateOf(maxtunnelLink) }
                             OutlinedTextField(
                                 value = linkText,
                                 onValueChange = {
                                     val cleaned = it.filter { c -> !c.isWhitespace() }
                                     linkText = cleaned
-                                    scope.launch { settingsStore.saveWdttLink(cleaned) }
+                                    scope.launch { settingsStore.saveMaxtunnelLink(cleaned) }
                                 },
-                                label = { Text("Ссылка wdtt://") },
-                                placeholder = { Text("Ссылка wdtt://") },
+                                label = { Text("Ссылка maxtunnel://") },
+                                placeholder = { Text("Ссылка maxtunnel://") },
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(16.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
@@ -763,7 +763,7 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            if (!wdttLinkMode) {
+            if (!maxtunnelLinkMode) {
                 OutlinedButton(
                     onClick = { showSecretsDialog = true },
                     modifier = Modifier.weight(1f).height(52.dp),

@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var eventOutputEnabled = os.Getenv("WDTT_EVENTS") == "1"
+var eventOutputEnabled = os.Getenv("MAXTUNNEL_EVENTS") == "1"
 
 type eventType string
 
@@ -34,7 +34,7 @@ func emitEvent(t eventType, payload map[string]any) {
 			return
 		}
 	}
-	fmt.Printf("__WDTT_EVENT__|%s|%s\n", t, string(p))
+	fmt.Printf("__MAXTUNNEL_EVENT__|%s|%s\n", t, string(p))
 }
 
 func emitError(code, message string, fatal bool) {

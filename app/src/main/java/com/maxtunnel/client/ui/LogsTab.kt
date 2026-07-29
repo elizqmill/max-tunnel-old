@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.maxtunnel.client.LogEntry
 import com.maxtunnel.client.TunnelManager
-import com.maxtunnel.client.WDTTColors
+import com.maxtunnel.client.MaxTunnelColors
 import com.maxtunnel.client.SettingsStore
 import kotlinx.coroutines.launch
 
@@ -104,7 +104,7 @@ fun LogsTab() {
 
         
         val isDark = isSystemInDarkTheme()
-        val terminalBg = if (isDark) WDTTColors.terminalBgDark else WDTTColors.terminalBg
+        val terminalBg = if (isDark) MaxTunnelColors.terminalBgDark else MaxTunnelColors.terminalBg
 
         Card(
             modifier = Modifier.fillMaxSize(),
@@ -128,10 +128,10 @@ fun LogsTab() {
 @Composable
 fun LogLine(entry: LogEntry) {
     val color = when {
-        entry.isError -> WDTTColors.terminalRed
-        entry.priority <= 2 -> WDTTColors.terminalGreen
-        entry.priority == 3 -> WDTTColors.terminalBlue
-        else -> WDTTColors.terminalText
+        entry.isError -> MaxTunnelColors.terminalRed
+        entry.priority <= 2 -> MaxTunnelColors.terminalGreen
+        entry.priority == 3 -> MaxTunnelColors.terminalBlue
+        else -> MaxTunnelColors.terminalText
     }
 
     var trigger by remember { mutableIntStateOf(0) }
@@ -149,7 +149,7 @@ fun LogLine(entry: LogEntry) {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Surface(
-            color = WDTTColors.terminalCounter.copy(alpha = 0.2f),
+            color = MaxTunnelColors.terminalCounter.copy(alpha = 0.2f),
             shape = RoundedCornerShape(12.dp),
             modifier = Modifier
                 .defaultMinSize(minWidth = 24.dp, minHeight = 24.dp)
@@ -161,7 +161,7 @@ fun LogLine(entry: LogEntry) {
             ) {
                 Text(
                     text = "${entry.count}",
-                    color = WDTTColors.terminalBlue,
+                    color = MaxTunnelColors.terminalBlue,
                     fontSize = 10.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1

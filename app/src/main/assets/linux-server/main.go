@@ -22,7 +22,7 @@ import (
 func main() {
 	listen := flag.String("listen", "0.0.0.0:56000", "DTLS адрес")
 	wgPort := flag.Int("wg-port", defaultInternalWGPort, "WireGuard UDP порт")
-	configDir := flag.String("config-dir", "/etc/wdtt", "директория конфигурации")
+	configDir := flag.String("config-dir", "/etc/maxtunnel", "директория конфигурации")
 	mainPass := flag.String("password", "", "пароль владельца")
 	adminID := flag.String("admin", "", "Telegram Admin ID")
 	botToken := flag.String("bot-token", "", "Telegram Bot Token")
@@ -35,7 +35,7 @@ func main() {
 
 	log.SetFlags(log.Ldate | log.Ltime | log.Lmicroseconds)
 	log.Println("══════════════════════════════════════════")
-	log.Println("   WDTT Server v2 (Multi-User)")
+	log.Println("   MaxTunnel Server v2 (Multi-User)")
 	log.Println("══════════════════════════════════════════")
 
 	ctx, cancel := context.WithCancel(context.Background())

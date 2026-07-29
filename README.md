@@ -1,4 +1,4 @@
-# WDTT — WireGuard over DTLS + TURN
+# MaxTunnel — WireGuard over DTLS + TURN
 
 Android-приложение для создания VPN-туннеля поверх DTLS через TURN relay
 с обфускацией трафика под RTP (audio/video/datachannel).
@@ -31,7 +31,7 @@ Android-приложение для создания VPN-туннеля пове
 
 ## Репозитории
 
-- **Сервер**: [elizqmill/wdtt-server](https://github.com/elizqmill/wdtt-server)
+- **Сервер**: [elizqmill/maxtunnel-server](https://github.com/elizqmill/maxtunnel-server)
 - **Клиент (Max)**: [elizqmill/Komet](https://github.com/elizqmill/Komet)
 
 ## Лицензия

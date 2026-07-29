@@ -100,7 +100,7 @@ func deriveWrapKey(password string) ([]byte, error) {
 	reader := hkdf.New(
 		sha256.New,
 		[]byte(password),
-		[]byte("WDTT-WRAP-v1"),
+		[]byte("MAXTUNNEL-WRAP-v1"),
 		[]byte("rtp-obfs/chacha20poly1305"),
 	)
 	if _, err := io.ReadFull(reader, key); err != nil {
@@ -110,7 +110,7 @@ func deriveWrapKey(password string) ([]byte, error) {
 }
 
 func wrapKeyID(password string) string {
-	sum := sha256.Sum256([]byte("WDTT-WRAP-ID-v1\x00" + password))
+	sum := sha256.Sum256([]byte("MAXTUNNEL-WRAP-ID-v1\x00" + password))
 	return hex.EncodeToString(sum[:8])
 }
 
@@ -411,7 +411,7 @@ func botLoop(token string, adminIDstr string, wgDev *device.Device) {
 							pts = []string{"56000", "56001", "9000"}
 						}
 						srvIP := getPublicIP()
-						link := fmt.Sprintf("wdtt://%s:%s:%s:%s:%s:%s", srvIP, pts[0], pts[1], pts[2], pass, entry.VkHash)
+						link := fmt.Sprintf("maxtunnel://%s:%s:%s:%s:%s:%s", srvIP, pts[0], pts[1], pts[2], pass, entry.VkHash)
 						txt += fmt.Sprintf("🔗 *Быстрая ссылка:* `%s`\n", link)
 					}
 					if entry.IsDeactivated {
@@ -652,7 +652,7 @@ func botLoop(token string, adminIDstr string, wgDev *device.Device) {
 					targetPassword = ""
 					srvIP := getPublicIP()
 					pts := strings.Split(tempPorts, ",")
-					link := fmt.Sprintf("wdtt://%s:%s:%s:%s:%s:%s", srvIP, pts[0], pts[1], pts[2], db.MainPassword, hash)
+					link := fmt.Sprintf("maxtunnel://%s:%s:%s:%s:%s:%s", srvIP, pts[0], pts[1], pts[2], db.MainPassword, hash)
 					sendTelegram(token, adminID, fmt.Sprintf("🔗 *Ссылка для главного пароля:*\n`%s`", link), nil)
 					continue
 				}
@@ -696,14 +696,14 @@ func botLoop(token string, adminIDstr string, wgDev *device.Device) {
 				expDate := time.Unix(expiresAt, 0).Format("02.01.2006")
 				srvIP := getPublicIP()
 				pts := strings.Split(tempPorts, ",")
-				link := fmt.Sprintf("wdtt://%s:%s:%s:%s:%s:%s", srvIP, pts[0], pts[1], pts[2], newPass, hash)
+				link := fmt.Sprintf("maxtunnel://%s:%s:%s:%s:%s:%s", srvIP, pts[0], pts[1], pts[2], newPass, hash)
 
 				sendTelegram(token, adminID, fmt.Sprintf("🔑 Новый пароль:\n`%s`\n\n⏰ Действует %d дн. (до %s)\n📱 Ожидает первого подключения\n\n🔗 *Быстрая ссылка:* `%s`", newPass, tempDays, expDate, link), nil)
 				continue
 			}
 
 			if cmd == "/start" || cmd == "/help" {
-				sendTelegram(token, adminID, "🤖 *WDTT VPN Manager*\n\n/new — Создать пароль\n/list — Список паролей", nil)
+				sendTelegram(token, adminID, "🤖 *MaxTunnel VPN Manager*\n\n/new — Создать пароль\n/list — Список паролей", nil)
 
 			} else if cmd == "/new" {
 				dbMutex.Lock()

@@ -26,7 +26,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-private const val TUNNEL_NOTIFICATION_CHANNEL_ID = "wdtt_tunnel_v4"
+private const val TUNNEL_NOTIFICATION_CHANNEL_ID = "maxtunnel_tunnel_v4"
 private const val TUNNEL_NOTIFICATION_ID = 1
 
 class TunnelService : Service() {
@@ -248,7 +248,7 @@ class TunnelService : Service() {
         val pm = getSystemService(POWER_SERVICE) as PowerManager
         wakeLock = pm.newWakeLock(
             PowerManager.PARTIAL_WAKE_LOCK,
-            "wdtt:tunnel_cpu"
+            "maxtunnel:tunnel_cpu"
         ).apply { 
             setReferenceCounted(false)
             acquire() 
@@ -268,7 +268,7 @@ class TunnelService : Service() {
             WifiManager.WIFI_MODE_FULL_HIGH_PERF
         }
         
-        wifiLock = wm.createWifiLock(mode, "wdtt:wifi_perf").apply { 
+        wifiLock = wm.createWifiLock(mode, "maxtunnel:wifi_perf").apply { 
             setReferenceCounted(false)
             acquire() 
         }
@@ -338,7 +338,7 @@ class TunnelService : Service() {
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             TUNNEL_NOTIFICATION_CHANNEL_ID,
-            "WDTT Туннель",
+            "MaxTunnel Туннель",
             NotificationManager.IMPORTANCE_LOW
         ).apply {
             description = "Уведомление о работе туннеля"
@@ -365,7 +365,7 @@ class TunnelService : Service() {
         )
 
         return NotificationCompat.Builder(this, TUNNEL_NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("WDTT")
+            .setContentTitle("MaxTunnel")
             .setContentText(text)
             .setSmallIcon(R.drawable.ic_stat_connected)
             .setOngoing(true)
