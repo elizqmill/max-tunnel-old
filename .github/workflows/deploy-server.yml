@@ -1,0 +1,48 @@
+name: Deploy Server
+
+on:
+  workflow_run:
+    workflows: ["Build APK"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.23'
+
+      - name: Build server binary
+        working-directory: app/src/main/assets/linux-server
+        run: |
+          go mod tidy
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o /tmp/maxtunnel-server .
+
+      - name: Deploy to VPS
+        env:
+          SSH_HOST: ${{ secrets.VPS_HOST }}
+          SSH_USER: ${{ secrets.VPS_USER }}
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+        run: |
+          echo "$SSH_KEY" > /tmp/ssh_key
+          chmod 600 /tmp/ssh_key
+          scp -o StrictHostKeyChecking=no -i /tmp/ssh_key /tmp/maxtunnel-server $SSH_USER@$SSH_HOST:/tmp/maxtunnel-server
+          ssh -o StrictHostKeyChecking=no -i /tmp/ssh_key $SSH_USER@$SSH_HOST << 'EOF'
+            sudo bash /tmp/deploy.sh update 2>/dev/null || \
+            sudo bash -c '
+              install -m 0755 /tmp/maxtunnel-server /usr/local/bin/maxtunnel-server
+              if ! systemctl is-active maxtunnel &>/dev/null; then
+                echo "⚠ Сервис не активен. Запусти установку через приложение."
+              else
+                systemctl daemon-reload
+                systemctl restart maxtunnel
+                echo "✅ Сервер обновлён"
+              fi
+            '
+          EOF

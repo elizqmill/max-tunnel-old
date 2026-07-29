@@ -559,6 +559,10 @@ fun SettingsTabContent(context: android.content.Context, scope: kotlinx.coroutin
                                 obfsMode = "video"
                                 scope.launch { settingsStore.saveObfsMode("video") }
                             }
+                            ProtocolChip("Data Channel", obfsMode == "datachannel", enabled = !tunnelRunning) {
+                                obfsMode = "datachannel"
+                                scope.launch { settingsStore.saveObfsMode("datachannel") }
+                            }
                         }
                     }
 
