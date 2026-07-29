@@ -92,7 +92,7 @@ func WorkerGroup(
 			return true
 		}
 
-		getStreamCache(credStreamID).invalidate(credStreamID)
+		clearCachedCreds(credStreamID)
 		u, p, urls, refreshErr := GetCreds(ctx, hash, credStreamID)
 		if refreshErr != nil {
 			log.Printf("[TURN] Не удалось обновить креды после %s: %v", reason, refreshErr)

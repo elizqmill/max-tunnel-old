@@ -111,9 +111,6 @@ func RunSession(
 
 	relay, err := tc.Allocate()
 	if err != nil {
-		if isAuthError(err) {
-			handleAuthError(creds.CacheStreamID)
-		}
 		errStr := err.Error()
 		if strings.Contains(errStr, "Quota") || strings.Contains(errStr, "486") {
 			return false, fmt.Errorf("TURN квота: %w", err)
@@ -121,8 +118,6 @@ func RunSession(
 		return false, fmt.Errorf("TURN Allocate: %w", err)
 	}
 	defer relay.Close()
-
-	getStreamCache(creds.CacheStreamID).errorCount.Store(0)
 
 	log.Printf("[СЕССИЯ #%d] Relay: %s", sessionID, relay.LocalAddr())
 

@@ -169,8 +169,10 @@ func getMaxCredsViaMaxCallsPath(ctx context.Context, link string, streamID int) 
 	if err != nil {
 		return "", "", nil, err
 	}
-	if apiErr := vkCallsAPIError(resp2); apiErr != nil {
-		return "", "", nil, newMaxCallsFailure("step2", maxCallsFailureMaxAPI, apiErr)
+	if e, ok := resp2["error"].(map[string]interface{}); ok {
+		if code, _ := e["error_code"].(float64); code != 0 {
+			return "", "", nil, newMaxCallsFailure("step2", maxCallsFailureMaxAPI, fmt.Errorf("VK API error %v: %s", code, e["error_msg"]))
+		}
 	}
 	userIDFloat, err := apiExtractFloat(resp2, "response", "user_id")
 	if err != nil {
@@ -196,8 +198,10 @@ func getMaxCredsViaMaxCallsPath(ctx context.Context, link string, streamID int) 
 	if err != nil {
 		return "", "", nil, err
 	}
-	if apiErr := vkCallsAPIError(resp3); apiErr != nil {
-		return "", "", nil, newMaxCallsFailure("step3", maxCallsFailureMaxAPI, apiErr)
+	if e, ok := resp3["error"].(map[string]interface{}); ok {
+		if code, _ := e["error_code"].(float64); code != 0 {
+			return "", "", nil, newMaxCallsFailure("step3", maxCallsFailureMaxAPI, fmt.Errorf("VK API error %v: %s", code, e["error_msg"]))
+		}
 	}
 	okAnonymToken, err := apiExtractStr(resp3, "response", "token")
 	if err != nil {
@@ -229,8 +233,10 @@ func getMaxCredsViaMaxCallsPath(ctx context.Context, link string, streamID int) 
 	if err != nil {
 		return "", "", nil, err
 	}
-	if okErr := vkCallsOKError(resp5); okErr != nil {
-		return "", "", nil, newMaxCallsFailure("step5", maxCallsFailureMaxAPI, fmt.Errorf("%w", okErr))
+	if e, ok := resp5["error"].(map[string]interface{}); ok {
+		if code, _ := e["code"].(float64); code != 0 {
+			return "", "", nil, newMaxCallsFailure("step5", maxCallsFailureMaxAPI, fmt.Errorf("OK API error %v: %s", code, e["description"]))
+		}
 	}
 
 	user, err := apiExtractStr(resp5, "turn_server", "username")

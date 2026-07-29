@@ -62,34 +62,10 @@ func cloneStringSlice(in []string) []string {
 	return out
 }
 
-func vkCallsAPIError(resp map[string]interface{}) error {
-	errObj, ok := resp["error"].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	code, _ := errObj["error_code"].(float64)
-	msg, _ := errObj["error_msg"].(string)
-	if code == 0 && msg == "" {
-		return nil
-	}
-	return fmt.Errorf("VK API error %v: %s (captcha_sid=%v, redirect_uri=%v)",
-		code, msg, errObj["captcha_sid"], errObj["redirect_uri"])
-}
-
-func vkCallsOKError(resp map[string]interface{}) error {
-	errObj, ok := resp["error"].(map[string]interface{})
-	if !ok {
-		return nil
-	}
-	code, ok := errObj["code"].(float64)
-	if !ok {
-		return nil
-	}
-	msg, _ := errObj["description"].(string)
-	if code == 0 {
-		return nil
-	}
-	return fmt.Errorf("OK API error %v: %s", code, msg)
+func clearCachedCreds(streamID int) {
+	credentialsStore.mu.Lock()
+	defer credentialsStore.mu.Unlock()
+	delete(credentialsStore.caches, getCacheID(streamID))
 }
 
 func GetCreds(ctx context.Context, link string, streamID int) (string, string, []string, error) {
